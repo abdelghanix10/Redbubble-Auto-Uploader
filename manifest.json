@@ -11,11 +11,11 @@
   "content_scripts": [
     {
       "matches": [
-        "https://www.redbubble.com/*",
         "https://www.redbubble.com/portfolio*",
+        "https://www.redbubble.com/portfolio/studio/promote*",
         "https://www.redbubble.com/portfolio/images/new*"
       ],
-      "js": ["content-new.js"],
+      "js": ["content.js"],
       "run_at": "document_idle"
     }
   ],
