@@ -1114,8 +1114,14 @@ class RedbubbleAutoUploader {
         if (pending > 0) {
           this.showStatus(
             "info",
-            `Session restored! ${pending} image(s) pending upload. Click "Start Upload" to continue.`
+            `Session restored! ${pending} image(s) pending. Auto-continuing upload...`
           );
+
+          // Automatically continue upload after a short delay
+          setTimeout(() => {
+            console.log("Auto-continuing upload after session restore...");
+            this.startUpload();
+          }, 2000);
         }
       } else {
         console.log("No queue data to restore");
