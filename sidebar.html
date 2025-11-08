@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redbubble Auto Uploader</title>
+    <link rel="stylesheet" href="sidebar.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f8f9fa;
+            overflow-x: hidden;
+        }
+
+        #app-container {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app-container">
+        <div class="rb-sidebar-header">
+            Redbubble Auto Uploader
+        </div>
+        <div class="rb-sidebar-content">
+            <!-- Status Messages -->
+            <div id="rb-status-container"></div>
+
+            <!-- Upload Section -->
+            <div class="rb-section">
+                <div class="rb-section-title">1. Select Images</div>
+                <input type="file" id="rb-image-input" class="rb-file-input" multiple accept="image/*">
+                <label for="rb-image-input" class="rb-file-button">
+                    📁 Choose Images
+                </label>
+                <div id="rb-selected-count" style="margin-top: 10px; font-size: 12px; color: #666;"></div>
+            </div>
+
+            <!-- CSV Upload Section -->
+            <div class="rb-section">
+                <div class="rb-section-title">2. Upload CSV (Optional)</div>
+                <input type="file" id="rb-csv-input" class="rb-file-input" accept=".csv">
+                <label for="rb-csv-input" class="rb-file-button">
+                    📄 Upload CSV
+                </label>
+                <div id="rb-csv-status" style="margin-top: 10px; font-size: 12px; color: #666;"></div>
+                <div style="margin-top: 10px; font-size: 11px; color: #888;">
+                    CSV Format: image_name, title, tags, description
+                </div>
+            </div>
+
+            <!-- Current Image Info -->
+            <div class="rb-section rb-hidden" id="rb-current-section">
+                <div class="rb-section-title">Current Image</div>
+                <div class="rb-current-image-info">
+                    <div class="rb-current-image-title">File:</div>
+                    <div class="rb-current-image-name" id="rb-current-image-name">-</div>
+                </div>
+                <div class="rb-navigation">
+                    <button class="rb-nav-button" id="rb-prev-button">← Previous</button>
+                    <button class="rb-nav-button" id="rb-next-button">Next →</button>
+                </div>
+            </div>
+
+            <!-- Manual Data Input Section -->
+            <div class="rb-section" id="rb-manual-section">
+                <div class="rb-section-title">3. Design Details</div>
+
+                <div class="rb-input-group">
+                    <label class="rb-label" for="rb-title-input">Title *</label>
+                    <input type="text" id="rb-title-input" class="rb-input" placeholder="Enter title">
+                </div>
+
+                <div class="rb-input-group">
+                    <label class="rb-label" for="rb-tags-input">Tags (comma-separated)</label>
+                    <textarea id="rb-tags-input" class="rb-textarea" placeholder="tag1, tag2, tag3"></textarea>
+                </div>
+
+                <div class="rb-input-group">
+                    <label class="rb-label" for="rb-description-input">Description</label>
+                    <textarea id="rb-description-input" class="rb-textarea" placeholder="Enter description"></textarea>
+                </div>
+            </div>
+
+            <!-- Image Queue -->
+            <div class="rb-section rb-hidden" id="rb-queue-section">
+                <div class="rb-section-title">Upload Queue</div>
+                <div id="rb-queue-list" class="rb-queue-list"></div>
+            </div>
+
+            <!-- Progress Info -->
+            <div class="rb-section rb-hidden" id="rb-progress-section">
+                <div class="rb-section-title">Progress</div>
+                <div id="rb-progress-info" style="font-size: 12px; color: #666;"></div>
+                <div class="rb-progress-bar">
+                    <div class="rb-progress-fill" id="rb-progress-fill" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Control Buttons -->
+            <div class="rb-section">
+                <button class="rb-button" id="rb-start-button">🚀 Start Upload</button>
+                <button class="rb-button rb-button-secondary" id="rb-stop-button">⏸ Stop</button>
+                <button class="rb-button rb-button-secondary" id="rb-clear-button">🗑 Clear All</button>
+            </div>
+
+            <!-- Instructions -->
+            <div class="rb-section">
+                <div class="rb-section-title">Instructions</div>
+                <ol style="font-size: 11px; color: #555; padding-left: 20px; margin: 10px 0;">
+                    <li>Select one or more images</li>
+                    <li>Optionally upload a CSV with metadata</li>
+                    <li>Enter design details (or let CSV auto-fill)</li>
+                    <li>Click "Start Upload" to begin automation</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script src="sidepanel.js"></script>
+</body>
+
+</html>
