@@ -1,0 +1,49 @@
+# Chrome Extension specific
+*.crx
+*.pem
+*.zip
+
+# Icons (user will generate their own)
+# Uncomment if you want to ignore icons
+# icons/*.png
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test files
+test/
+tests/
+*.test.js
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Node modules (if you add any build tools later)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Personal CSV files (keep sample.csv)
+*.csv
+!sample.csv
+
+# User data
+user-data/
+uploads/

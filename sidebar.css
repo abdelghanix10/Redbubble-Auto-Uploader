@@ -1,0 +1,316 @@
+/* Redbubble Auto Uploader Sidebar Styles */
+
+#rb-auto-uploader-sidebar {
+  position: fixed;
+  right: 0;
+  top: 0;
+  width: 380px;
+  height: 100vh;
+  background: #ffffff;
+  border-left: 2px solid #e0e0e0;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  z-index: 10000;
+  overflow-y: auto;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+#rb-auto-uploader-sidebar * {
+  box-sizing: border-box;
+}
+
+.rb-sidebar-header {
+  background: #e41b13;
+  color: white;
+  padding: 20px;
+  font-size: 18px;
+  font-weight: bold;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.rb-sidebar-content {
+  padding: 20px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.rb-section {
+  margin-bottom: 25px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.rb-section:last-child {
+  border-bottom: none;
+}
+
+.rb-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #333;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rb-input-group {
+  margin-bottom: 15px;
+}
+
+.rb-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: #555;
+}
+
+.rb-input,
+.rb-textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.rb-input:focus,
+.rb-textarea:focus {
+  outline: none;
+  border-color: #e41b13;
+}
+
+.rb-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.rb-button {
+  width: 100%;
+  padding: 12px;
+  background: #e41b13;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-bottom: 10px;
+}
+
+.rb-button:hover {
+  background: #c41710;
+}
+
+.rb-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.rb-button-secondary {
+  background: #555;
+}
+
+.rb-button-secondary:hover {
+  background: #333;
+}
+
+.rb-file-input {
+  display: none;
+}
+
+.rb-file-button {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  background: #f5f5f5;
+  border: 2px dashed #ccc;
+  border-radius: 4px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 13px;
+  color: #555;
+}
+
+.rb-file-button:hover {
+  border-color: #e41b13;
+  background: #fff;
+  color: #e41b13;
+}
+
+.rb-image-list {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 10px;
+  background: #f9f9f9;
+}
+
+.rb-image-item {
+  padding: 8px;
+  margin-bottom: 6px;
+  background: white;
+  border-radius: 3px;
+  font-size: 12px;
+  border-left: 3px solid #e41b13;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.rb-image-item.active {
+  background: #fff3f2;
+  font-weight: 600;
+}
+
+.rb-image-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rb-image-status {
+  font-size: 11px;
+  color: #888;
+  margin-left: 8px;
+}
+
+.rb-navigation {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.rb-nav-button {
+  flex: 1;
+  padding: 10px;
+  background: #555;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.rb-nav-button:hover:not(:disabled) {
+  background: #333;
+}
+
+.rb-nav-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.rb-status {
+  padding: 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  margin-bottom: 15px;
+  line-height: 1.5;
+}
+
+.rb-status.info {
+  background: #e3f2fd;
+  color: #1976d2;
+  border-left: 4px solid #1976d2;
+}
+
+.rb-status.success {
+  background: #e8f5e9;
+  color: #388e3c;
+  border-left: 4px solid #388e3c;
+}
+
+.rb-status.error {
+  background: #ffebee;
+  color: #d32f2f;
+  border-left: 4px solid #d32f2f;
+}
+
+.rb-status.warning {
+  background: #fff3e0;
+  color: #f57c00;
+  border-left: 4px solid #f57c00;
+}
+
+.rb-progress {
+  margin-top: 10px;
+}
+
+.rb-progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.rb-progress-fill {
+  height: 100%;
+  background: #e41b13;
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+
+.rb-progress-text {
+  font-size: 12px;
+  color: #666;
+  margin-top: 6px;
+  text-align: center;
+}
+
+.rb-current-image-info {
+  background: #f5f5f5;
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+}
+
+.rb-current-image-title {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 5px;
+}
+
+.rb-current-image-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  word-break: break-all;
+}
+
+.rb-hidden {
+  display: none !important;
+}
+
+/* Scrollbar styling */
+#rb-auto-uploader-sidebar::-webkit-scrollbar,
+.rb-image-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+#rb-auto-uploader-sidebar::-webkit-scrollbar-track,
+.rb-image-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+#rb-auto-uploader-sidebar::-webkit-scrollbar-thumb,
+.rb-image-list::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+#rb-auto-uploader-sidebar::-webkit-scrollbar-thumb:hover,
+.rb-image-list::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
