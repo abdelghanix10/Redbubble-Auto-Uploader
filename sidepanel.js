@@ -105,6 +105,7 @@ class SidePanelController {
 
     this.currentIndex = 0;
     await this.saveState();
+    this.updateFormFieldsFromCSV();
     this.updateUI();
     this.showStatus(`${files.length} image(s) selected`, "success");
   }
@@ -116,6 +117,7 @@ class SidePanelController {
     this.csvData = this.parseCSV(text);
 
     await this.saveState();
+    this.updateFormFieldsFromCSV();
     this.updateUI();
 
     document.getElementById(
@@ -130,7 +132,12 @@ class SidePanelController {
 
     // Skip header row
     for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(",").map((v) => v.trim());
+      const line = lines[i].trim();
+      if (!line) continue;
+
+      // Parse CSV properly handling quoted fields with commas
+      const values = this.parseCSVLine(line);
+
       if (values.length >= 4) {
         data.push({
           image_name: values[0],
@@ -141,14 +148,82 @@ class SidePanelController {
       }
     }
 
+    console.log("CSV parsed:", data);
     return data;
+  }
+
+  parseCSVLine(line) {
+    const result = [];
+    let current = "";
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      const nextChar = line[i + 1];
+
+      if (char === '"') {
+        if (inQuotes && nextChar === '"') {
+          // Escaped quote
+          current += '"';
+          i++; // Skip next quote
+        } else {
+          // Toggle quote state
+          inQuotes = !inQuotes;
+        }
+      } else if (char === "," && !inQuotes) {
+        // Field separator
+        result.push(current.trim());
+        current = "";
+      } else {
+        current += char;
+      }
+    }
+
+    // Add last field
+    result.push(current.trim());
+
+    return result;
   }
 
   navigateImages(direction) {
     const newIndex = this.currentIndex + direction;
     if (newIndex >= 0 && newIndex < this.images.length) {
       this.currentIndex = newIndex;
+      this.updateFormFieldsFromCSV();
       this.updateUI();
+    }
+  }
+
+  updateFormFieldsFromCSV() {
+    if (!this.images[this.currentIndex]) return;
+
+    const currentImage = this.images[this.currentIndex];
+
+    console.log("Updating form fields for image:", currentImage.name);
+    console.log("CSV data available:", this.csvData);
+
+    // Clear form fields first
+    document.getElementById("rb-title-input").value = "";
+    document.getElementById("rb-tags-input").value = "";
+    document.getElementById("rb-description-input").value = "";
+
+    // Try to get data from CSV
+    if (this.csvData) {
+      const csvEntry = this.csvData.find(
+        (entry) =>
+          entry.image_name === currentImage.name ||
+          entry.image_name === currentImage.name.replace(/\.[^/.]+$/, "")
+      );
+
+      console.log("CSV entry found:", csvEntry);
+
+      if (csvEntry) {
+        document.getElementById("rb-title-input").value = csvEntry.title || "";
+        document.getElementById("rb-tags-input").value = csvEntry.tags || "";
+        document.getElementById("rb-description-input").value =
+          csvEntry.description || "";
+        console.log("Form fields populated from CSV");
+      }
     }
   }
 

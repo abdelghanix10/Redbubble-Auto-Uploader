@@ -97,15 +97,26 @@ class RedbubbleAutomation {
 
   async uploadImageFile(imageFile) {
     return new Promise((resolve, reject) => {
-      // Find the file input element
-      const fileInput = document.querySelector(
-        'input[type="file"][accept*="image"]'
-      );
+      // Find the file input element - use specific Redbubble ID
+      const fileInput = document.getElementById("select-image-single");
 
       if (!fileInput) {
-        reject(new Error("File input not found on page"));
-        return;
+        // Fallback to generic selector
+        const fallbackInput = document.querySelector(
+          'input[type="file"][accept*="image"]'
+        );
+        if (!fallbackInput) {
+          reject(new Error("File input not found on page"));
+          return;
+        }
+        console.log("Using fallback file input selector");
       }
+
+      const targetInput =
+        fileInput ||
+        document.querySelector('input[type="file"][accept*="image"]');
+
+      console.log(`Uploading file: ${imageFile.name}`);
 
       // Convert base64 to File object
       fetch(imageFile.data)
@@ -118,11 +129,13 @@ class RedbubbleAutomation {
           // Create DataTransfer to set files
           const dataTransfer = new DataTransfer();
           dataTransfer.items.add(file);
-          fileInput.files = dataTransfer.files;
+          targetInput.files = dataTransfer.files;
+
+          console.log("File added to input, triggering events...");
 
           // Trigger events
-          fileInput.dispatchEvent(new Event("change", { bubbles: true }));
-          fileInput.dispatchEvent(new Event("input", { bubbles: true }));
+          targetInput.dispatchEvent(new Event("change", { bubbles: true }));
+          targetInput.dispatchEvent(new Event("input", { bubbles: true }));
 
           console.log("Image file uploaded:", imageFile.name);
 
@@ -157,20 +170,24 @@ class RedbubbleAutomation {
             numericValue >= 1
           ) {
             clearInterval(checkProgress);
-            console.log("Upload completed!");
-            setTimeout(() => resolve(), 1000);
+            console.log("Upload completed! Waiting for form to be ready...");
+            // Wait longer for form to fully load
+            setTimeout(() => resolve(), 3000);
             return;
           }
         }
 
         // Method 2: Check if form fields are visible (indicates upload complete)
         const titleField = document.querySelector(
-          'input[name="title"], input[placeholder*="title" i]'
+          'input[name="title"], input[placeholder*="title" i], input[id*="title" i]'
         );
         if (titleField && titleField.offsetParent !== null) {
           clearInterval(checkProgress);
-          console.log("Upload completed (form visible)!");
-          setTimeout(() => resolve(), 1000);
+          console.log(
+            "Upload completed (form visible)! Waiting for form to be ready..."
+          );
+          // Wait longer for form to fully load
+          setTimeout(() => resolve(), 2000);
           return;
         }
 
@@ -184,140 +201,150 @@ class RedbubbleAutomation {
   }
 
   async fillFormFields(formData) {
-    return new Promise(async (resolve, reject) => {
-      let attempts = 0;
-      const maxAttempts = 30;
+    // Wait for form fields to appear after upload
+    let titleInput = null;
+    let attempts = 0;
 
-      const tryFill = async () => {
+    console.log("Looking for form fields...");
+
+    // Try to find title input (wait up to 30 seconds)
+    while (!titleInput && attempts < 60) {
+      titleInput = document.getElementById("work_title_en");
+      if (!titleInput) {
+        await this.sleep(500);
         attempts++;
+      }
+    }
 
-        // Find title field
-        const titleField = document.querySelector(
-          'input[name="title"], input[placeholder*="title" i], #work_title'
-        );
+    if (!titleInput) {
+      throw new Error("Title input field not found - form may not have loaded");
+    }
 
-        // Find tags field
-        const tagsField = document.querySelector(
-          'input[name="tags"], input[placeholder*="tag" i], textarea[name="tags"]'
-        );
+    this.sendStatusToPanel("Filling in design details...", "info");
+    console.log("Form fields found, filling data...");
 
-        // Find description field
-        const descField = document.querySelector(
-          'textarea[name="description"], textarea[placeholder*="description" i], #work_description'
-        );
+    // Fill title
+    this.setInputValue(titleInput, formData.title);
+    await this.sleep(500);
+    console.log("Title filled:", formData.title);
 
-        if (titleField) {
-          // Fill title
-          if (formData.title) {
-            await this.setInputValue(titleField, formData.title);
-            console.log("Title filled:", formData.title);
-          }
+    // Fill tags
+    if (formData.tags) {
+      const tagsInput = document.getElementById("work_tag_field_en");
+      if (tagsInput) {
+        this.setInputValue(tagsInput, formData.tags);
+        await this.sleep(500);
+        console.log("Tags filled:", formData.tags);
+      } else {
+        console.warn("Tags input field not found");
+      }
+    }
 
-          // Fill tags
-          if (tagsField && formData.tags) {
-            await this.setInputValue(tagsField, formData.tags);
-            console.log("Tags filled:", formData.tags);
-          }
+    // Fill description
+    if (formData.description) {
+      const descInput = document.getElementById("work_description_en");
+      if (descInput) {
+        this.setInputValue(descInput, formData.description);
+        await this.sleep(500);
+        console.log("Description filled:", formData.description);
+      } else {
+        console.warn("Description input field not found");
+      }
+    }
 
-          // Fill description
-          if (descField && formData.description) {
-            await this.setInputValue(descField, formData.description);
-            console.log("Description filled:", formData.description);
-          }
-
-          setTimeout(() => resolve(), 1000);
-          return;
-        }
-
-        if (attempts >= maxAttempts) {
-          reject(new Error("Form fields not found"));
-          return;
-        }
-
-        setTimeout(tryFill, 500);
-      };
-
-      tryFill();
+    // Verify fields were filled
+    console.log("Form filled with:", {
+      title: titleInput.value,
+      tags: document.getElementById("work_tag_field_en")?.value,
+      description: document.getElementById("work_description_en")?.value,
     });
+
+    await this.sleep(1000);
   }
 
-  async setInputValue(element, value) {
-    return new Promise((resolve) => {
-      // Clear existing value
-      element.value = "";
-      element.dispatchEvent(new Event("input", { bubbles: true }));
+  setInputValue(element, value) {
+    // Clear existing value first
+    element.value = "";
+    element.dispatchEvent(new Event("input", { bubbles: true }));
 
-      // Set new value
-      element.value = value;
+    // Set new value
+    element.value = value;
 
-      // Trigger all necessary events
-      element.dispatchEvent(new Event("input", { bubbles: true }));
-      element.dispatchEvent(new Event("change", { bubbles: true }));
-      element.dispatchEvent(new Event("blur", { bubbles: true }));
+    // Trigger multiple events to ensure Redbubble's form detects the change
+    element.dispatchEvent(new Event("input", { bubbles: true }));
+    element.dispatchEvent(new Event("change", { bubbles: true }));
+    element.dispatchEvent(new Event("blur", { bubbles: true }));
 
-      // Focus and blur to ensure validation
-      element.focus();
-      setTimeout(() => {
-        element.blur();
-        resolve();
-      }, 100);
-    });
+    // Also try setting focus to trigger any validation
+    element.focus();
+    element.blur();
   }
 
   async setContentOptions() {
-    return new Promise((resolve) => {
-      // Find and click "Safe for work" option
-      const safeForWorkLabel = Array.from(
-        document.querySelectorAll("label")
-      ).find((label) => label.textContent.includes("Safe for work"));
+    this.sendStatusToPanel("Setting content options...", "info");
+    console.log("Setting content options...");
 
-      if (safeForWorkLabel) {
-        const radio = safeForWorkLabel.querySelector('input[type="radio"]');
-        if (radio && !radio.checked) {
-          radio.click();
-          console.log('Set to "Safe for work"');
-        }
+    // Set "Safe for work" to Yes (true)
+    const safeForWorkYes = document.getElementById("work_safe_for_work_true");
+    if (safeForWorkYes) {
+      if (!safeForWorkYes.checked) {
+        safeForWorkYes.click();
+        await this.sleep(500);
       }
+      console.log("Safe for work set to: Yes");
+    } else {
+      console.warn("Safe for work radio button not found");
+    }
 
-      // Find and check "I own the rights" checkbox
-      const rightsCheckbox = Array.from(
-        document.querySelectorAll("label")
-      ).find(
-        (label) =>
-          label.textContent.includes("I own the rights") ||
-          label.textContent.includes("own the copyright")
-      );
-
-      if (rightsCheckbox) {
-        const checkbox = rightsCheckbox.querySelector('input[type="checkbox"]');
-        if (checkbox && !checkbox.checked) {
-          checkbox.click();
-          console.log('Checked "I own the rights"');
-        }
+    // Check rights declaration
+    const rightsCheckbox = document.getElementById("rightsDeclaration");
+    if (rightsCheckbox) {
+      if (!rightsCheckbox.checked) {
+        rightsCheckbox.click();
+        await this.sleep(500);
       }
+      console.log("Rights declaration checked");
+    } else {
+      console.warn("Rights declaration checkbox not found");
+    }
 
-      setTimeout(() => resolve(), 500);
-    });
+    await this.sleep(500);
   }
 
   async submitForm() {
-    return new Promise((resolve, reject) => {
-      // Find the submit button
-      const submitButton = Array.from(document.querySelectorAll("button")).find(
-        (btn) =>
-          btn.textContent.includes("Save work") ||
-          btn.textContent.includes("Submit") ||
-          btn.textContent.includes("Upload")
-      );
+    this.sendStatusToPanel("Submitting work...", "info");
+    console.log("Looking for submit button...");
 
-      if (submitButton) {
-        submitButton.click();
-        console.log("Form submitted");
-        setTimeout(() => resolve(), 1000);
-      } else {
-        reject(new Error("Submit button not found"));
-      }
-    });
+    const submitButton = document.getElementById("submit-work");
+
+    if (!submitButton) {
+      // Debug: Log all buttons
+      const allButtons = document.querySelectorAll("button");
+      console.log(
+        "Submit button not found. All buttons on page:",
+        allButtons.length
+      );
+      allButtons.forEach((btn, i) => {
+        console.log(`Button ${i}:`, {
+          text: btn.textContent.trim(),
+          type: btn.type,
+          id: btn.id,
+          className: btn.className,
+        });
+      });
+      throw new Error("Submit button not found");
+    }
+
+    if (submitButton.disabled) {
+      console.error("Submit button is disabled");
+      throw new Error("Submit button is disabled - form may be incomplete");
+    }
+
+    console.log("Clicking submit button...");
+    submitButton.click();
+    console.log("Submit button clicked");
+
+    await this.sleep(1000);
   }
 
   sendStatusToPanel(text, type) {
@@ -332,6 +359,10 @@ class RedbubbleAutomation {
     chrome.runtime.sendMessage(message).catch((err) => {
       console.log("Failed to send message to panel:", err);
     });
+  }
+
+  sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 
