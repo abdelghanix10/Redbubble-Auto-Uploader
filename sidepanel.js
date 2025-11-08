@@ -67,29 +67,38 @@ class SidePanelController {
     // Listen for messages from content script
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       this.handleMessage(message, sender, sendResponse);
-      return true;
+      // Don't return true here - let handleMessage decide
     });
   }
 
   handleMessage(message, sender, sendResponse) {
+    console.log("Side panel received message:", message.action);
+
     switch (message.action) {
       case "updateStatus":
         this.showStatus(message.text, message.type);
+        // No need to send response for fire-and-forget messages
         break;
       case "updateProgress":
         this.updateProgress(message.current, message.total);
+        // No need to send response for fire-and-forget messages
         break;
       case "uploadComplete":
         this.handleUploadComplete();
+        // No need to send response for fire-and-forget messages
         break;
       case "getFormData":
         const formData = this.getFormDataForCurrentImage();
         sendResponse(formData);
-        break;
+        return true; // Keep channel open for async response
       case "getCurrentImage":
-        sendResponse(this.getCurrentImageFile());
-        break;
+        this.getCurrentImageFile().then((imageFile) => {
+          sendResponse(imageFile);
+        });
+        return true; // Keep channel open for async response
     }
+
+    return false; // Close channel immediately for non-async messages
   }
 
   async handleImageSelection(files) {
@@ -297,19 +306,33 @@ class SidePanelController {
     await this.saveState();
     this.updateUI();
 
-    // Send message to content script to start upload
+    // Send message to content script through background script
     const imageFile = await this.getCurrentImageFile();
     const formData = this.getFormDataForCurrentImage();
 
-    chrome.tabs.sendMessage(this.currentTab.id, {
-      action: "startUpload",
-      imageFile: imageFile,
-      formData: formData,
-      currentIndex: this.currentIndex,
-      totalImages: this.images.length,
-    });
-
     this.showStatus("Starting upload automation...", "info");
+
+    try {
+      // Send to background script, which will forward to content script
+      const response = await chrome.runtime.sendMessage({
+        action: "startUploadTask",
+        imageFile: imageFile,
+        formData: formData,
+        currentIndex: this.currentIndex,
+        totalImages: this.images.length,
+      });
+
+      if (response.success) {
+        console.log("Upload task sent successfully");
+      } else {
+        throw new Error(response.error || "Failed to start upload");
+      }
+    } catch (error) {
+      console.error("Failed to start upload:", error);
+      this.showStatus("Error: " + error.message, "error");
+      this.isUploading = false;
+      this.updateUI();
+    }
   }
 
   stopUpload() {
@@ -317,9 +340,13 @@ class SidePanelController {
     this.saveState();
     this.updateUI();
 
-    chrome.tabs.sendMessage(this.currentTab.id, {
-      action: "stopUpload",
-    });
+    try {
+      chrome.tabs.sendMessage(this.currentTab.id, {
+        action: "stopUpload",
+      });
+    } catch (error) {
+      console.error("Failed to send stop message:", error);
+    }
 
     this.showStatus("Upload stopped", "warning");
   }

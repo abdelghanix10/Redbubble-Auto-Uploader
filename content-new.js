@@ -11,25 +11,73 @@ class RedbubbleAutomation {
     this.init();
   }
 
-  init() {
-    // Listen for messages from side panel
+  async init() {
+    // Listen for messages from background script
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       this.handleMessage(message, sender, sendResponse);
       return true;
     });
 
     console.log("Redbubble Auto Uploader: Content script loaded");
+    console.log("Current URL:", window.location.href);
+
+    // Check if we're on the promote page - redirect back to upload
+    if (window.location.href.includes("/studio/promote/")) {
+      console.log("On promote page, redirecting to upload page...");
+
+      // Check if there's a pending upload task
+      const response = await chrome.runtime.sendMessage({
+        action: "getUploadTask",
+      });
+      if (response.success && response.task) {
+        console.log("Upload task found, will resume after redirect");
+        // Task will be picked up when we land on upload page
+      }
+
+      // Redirect to upload page
+      await this.sleep(1000);
+      window.location.href = "https://www.redbubble.com/portfolio/images/new";
+      return;
+    }
+
+    // Check if we're on the upload page after a redirect
+    if (window.location.href.includes("/portfolio/images/new")) {
+      // Check if there's a pending upload task
+      const response = await chrome.runtime.sendMessage({
+        action: "getUploadTask",
+      });
+      if (response.success && response.task) {
+        console.log("Found pending upload task, resuming...");
+
+        // Notify panel that we're resuming
+        this.sendMessageToPanel({ action: "uploadComplete" });
+
+        // Clear the task first
+        await chrome.runtime.sendMessage({ action: "clearUploadTask" });
+
+        // Small delay to let page settle
+        await this.sleep(2000);
+
+        console.log("Auto-resuming upload after page load");
+      }
+    }
   }
 
   async handleMessage(message, sender, sendResponse) {
+    console.log("Content script received message:", message.action);
+
     switch (message.action) {
       case "startUpload":
-        await this.startUpload(
+        // Start upload without blocking response
+        this.startUpload(
           message.imageFile,
           message.formData,
           message.currentIndex,
           message.totalImages
-        );
+        ).catch((error) => {
+          console.error("Upload error in handler:", error);
+        });
+        // Respond immediately
         sendResponse({ success: true });
         break;
       case "stopUpload":
@@ -37,6 +85,7 @@ class RedbubbleAutomation {
         sendResponse({ success: true });
         break;
     }
+    return false; // No async response needed
   }
 
   async startUpload(imageFile, formData, currentIndex, totalImages) {
@@ -72,22 +121,57 @@ class RedbubbleAutomation {
       this.sendStatusToPanel("Submitting design...", "info");
       await this.submitForm();
 
-      // Step 6: Wait for redirect and notify panel
-      this.sendStatusToPanel(
-        `Upload ${currentIndex + 1} completed!`,
-        "success"
-      );
-
-      // Wait a bit for page to redirect
-      setTimeout(() => {
-        this.sendMessageToPanel({ action: "uploadComplete" });
-        this.isUploading = false;
-      }, 2000);
+      // Step 6: Wait for redirect and check URL in loop
+      this.sendStatusToPanel("Waiting for redirect...", "info");
+      await this.waitForRedirect(currentIndex, totalImages);
     } catch (error) {
       console.error("Upload error:", error);
       this.sendStatusToPanel(`Error: ${error.message}`, "error");
       this.isUploading = false;
     }
+  }
+
+  async waitForRedirect(currentIndex, totalImages) {
+    let attempts = 0;
+    const maxAttempts = 30; // 60 seconds max (30 * 2 seconds)
+
+    console.log("Checking for redirect to promote page...");
+
+    while (attempts < maxAttempts) {
+      const currentUrl = window.location.href;
+      console.log(`Attempt ${attempts + 1}: Current URL:`, currentUrl);
+
+      if (currentUrl.includes("/studio/promote/")) {
+        console.log(
+          "✓ Redirected to promote page! Navigating back to upload page..."
+        );
+
+        this.sendStatusToPanel(
+          `Upload ${currentIndex + 1} completed! Loading next image...`,
+          "success"
+        );
+
+        // Notify panel that upload is complete
+        this.sendMessageToPanel({ action: "uploadComplete" });
+        this.isUploading = false;
+
+        // Redirect back to upload page for next image
+        await this.sleep(1000);
+        window.location.href = "https://www.redbubble.com/portfolio/images/new";
+        return;
+      }
+
+      // Wait 2 seconds before checking again
+      await this.sleep(2000);
+      attempts++;
+    }
+
+    // If timeout, still notify completion
+    console.log("Redirect timeout - assuming upload completed");
+    this.sendStatusToPanel(`Upload ${currentIndex + 1} completed!`, "success");
+
+    this.sendMessageToPanel({ action: "uploadComplete" });
+    this.isUploading = false;
   }
 
   stopUpload() {
@@ -348,14 +432,20 @@ class RedbubbleAutomation {
   }
 
   sendStatusToPanel(text, type) {
-    this.sendMessageToPanel({
-      action: "updateStatus",
-      text: text,
-      type: type,
-    });
+    // Send through background script to avoid message channel closure
+    chrome.runtime
+      .sendMessage({
+        action: "updateStatus",
+        text: text,
+        type: type,
+      })
+      .catch((err) => {
+        console.log("Failed to send status to panel:", err);
+      });
   }
 
   sendMessageToPanel(message) {
+    // Send through background script to avoid message channel closure
     chrome.runtime.sendMessage(message).catch((err) => {
       console.log("Failed to send message to panel:", err);
     });
