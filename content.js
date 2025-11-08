@@ -94,6 +94,26 @@ class RedbubbleAutomation {
       return;
     }
 
+    // Check if we're on the correct upload page
+    if (!window.location.href.includes("/portfolio/images/new")) {
+      console.log("Not on upload page, redirecting...");
+      this.sendStatusToPanel("Redirecting to upload page...", "info");
+
+      // Store the task for after redirect
+      await chrome.runtime.sendMessage({
+        action: "startUploadTask",
+        imageFile: imageFile,
+        formData: formData,
+        currentIndex: currentIndex,
+        totalImages: totalImages,
+      });
+
+      // Redirect to upload page
+      await this.sleep(500);
+      window.location.href = "https://www.redbubble.com/portfolio/images/new";
+      return;
+    }
+
     this.isUploading = true;
     this.currentUpload = { imageFile, formData, currentIndex, totalImages };
 

@@ -1,18 +1,39 @@
-/* Redbubble Auto Uploader Sidebar Styles */
+/* Redbubble Auto Uploader - Shadcn UI Inspired Styles */
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 0 0% 3.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 3.9%;
+  --primary: 0 84.2% 60.2%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 0 0% 96.1%;
+  --secondary-foreground: 0 0% 9%;
+  --muted: 0 0% 96.1%;
+  --muted-foreground: 0 0% 45.1%;
+  --accent: 0 0% 96.1%;
+  --accent-foreground: 0 0% 9%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 89.8%;
+  --input: 0 0% 89.8%;
+  --ring: 0 84.2% 60.2%;
+  --radius: 0.5rem;
+}
 
 #rb-auto-uploader-sidebar {
   position: fixed;
   right: 0;
   top: 0;
-  width: 380px;
+  width: 420px;
   height: 100vh;
-  background: #ffffff;
-  border-left: 2px solid #e0e0e0;
-  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+  background: hsl(var(--background));
+  border-left: 1px solid hsl(var(--border));
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.08);
   z-index: 10000;
   overflow-y: auto;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-    Ubuntu, Cantarell, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
   display: flex;
   flex-direction: column;
 }
@@ -22,67 +43,74 @@
 }
 
 .rb-sidebar-header {
-  background: #e41b13;
-  color: white;
-  padding: 20px;
-  font-size: 18px;
-  font-weight: bold;
+  background: hsl(var(--foreground));
+  color: hsl(var(--background));
+  padding: 24px;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
   flex-shrink: 0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid hsl(var(--border));
 }
 
 .rb-sidebar-content {
-  padding: 20px;
+  padding: 24px;
   flex: 1;
   overflow-y: auto;
 }
 
 .rb-section {
-  margin-bottom: 25px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.rb-section:last-child {
-  border-bottom: none;
+  margin-bottom: 32px;
+  padding: 20px;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
 }
 
 .rb-section-title {
   font-size: 14px;
   font-weight: 600;
-  margin-bottom: 12px;
-  color: #333;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  margin-bottom: 16px;
+  color: hsl(var(--foreground));
+  letter-spacing: -0.3px;
 }
 
 .rb-input-group {
-  margin-bottom: 15px;
+  margin-bottom: 16px;
 }
 
 .rb-label {
   display: block;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
-  margin-bottom: 6px;
-  color: #555;
+  margin-bottom: 8px;
+  color: hsl(var(--foreground));
 }
 
 .rb-input,
 .rb-textarea {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 13px;
+  width: -webkit-fill-available;
+  padding: 10px 12px;
+  background: hsl(var(--background));
+  border: 1.5px solid hsl(var(--input));
+  border-radius: calc(var(--radius) - 2px);
+  font-size: 14px;
   font-family: inherit;
-  transition: border-color 0.2s;
+  color: hsl(var(--foreground));
+  transition: all 0.2s ease;
 }
 
 .rb-input:focus,
 .rb-textarea:focus {
   outline: none;
-  border-color: #e41b13;
+  border-color: hsl(var(--ring));
+  box-shadow: 0 0 0 3px hsla(var(--ring), 0.12);
+  background: hsl(var(--background));
+}
+
+.rb-input::placeholder,
+.rb-textarea::placeholder {
+  color: hsl(var(--muted-foreground) / 0.5);
 }
 
 .rb-textarea {
@@ -92,33 +120,44 @@
 
 .rb-button {
   width: 100%;
-  padding: 12px;
-  background: #e41b13;
-  color: white;
+  padding: 10px 16px;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
   border: none;
-  border-radius: 4px;
+  border-radius: calc(var(--radius) - 2px);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
-  margin-bottom: 10px;
+  transition: all 0.15s ease;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .rb-button:hover {
-  background: #c41710;
+  background: hsl(var(--primary) / 0.9);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.rb-button:active {
+  transform: translateY(1px);
 }
 
 .rb-button:disabled {
-  background: #ccc;
+  background: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .rb-button-secondary {
-  background: #555;
+  background: hsl(var(--secondary));
+  color: hsl(var(--secondary-foreground));
+  border: 1px solid hsl(var(--border));
 }
 
 .rb-button-secondary:hover {
-  background: #333;
+  background: hsl(var(--accent));
+  border-color: hsl(var(--foreground) / 0.2);
 }
 
 .rb-file-input {
@@ -126,56 +165,76 @@
 }
 
 .rb-file-button {
-  display: block;
-  width: 100%;
-  padding: 12px;
-  background: #f5f5f5;
-  border: 2px dashed #ccc;
-  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 32px 24px;
+  background: hsl(var(--background));
+  border: 2px dashed hsl(var(--border));
+  border-radius: var(--radius);
   text-align: center;
   cursor: pointer;
-  transition: all 0.2s;
-  font-size: 13px;
-  color: #555;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
 }
 
 .rb-file-button:hover {
-  border-color: #e41b13;
-  background: #fff;
-  color: #e41b13;
+  border-color: hsl(var(--ring));
+  background: hsl(var(--accent));
+  color: hsl(var(--foreground));
+  border-style: solid;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-.rb-image-list {
-  max-height: 200px;
+.rb-queue-list {
+  max-height: 300px;
   overflow-y: auto;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  padding: 10px;
-  background: #f9f9f9;
-}
-
-.rb-image-item {
+  border: 1px solid hsl(var(--border));
+  border-radius: calc(var(--radius) - 2px);
   padding: 8px;
-  margin-bottom: 6px;
-  background: white;
-  border-radius: 3px;
-  font-size: 12px;
-  border-left: 3px solid #e41b13;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  background: hsl(var(--muted) / 0.3);
 }
 
-.rb-image-item.active {
-  background: #fff3f2;
+.rb-queue-item {
+  padding: 12px;
+  margin-bottom: 8px;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: calc(var(--radius) - 4px);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.15s ease;
+}
+
+.rb-queue-item:hover {
+  border-color: hsl(var(--ring) / 0.5);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.rb-queue-item.active {
+  background: hsl(var(--primary) / 0.05);
+  border-color: hsl(var(--primary));
   font-weight: 600;
 }
 
-.rb-image-name {
+.rb-queue-status {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.rb-queue-name {
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: hsl(var(--foreground));
 }
 
 .rb-image-status {
@@ -186,131 +245,181 @@
 
 .rb-navigation {
   display: flex;
-  gap: 10px;
-  margin-top: 15px;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 .rb-nav-button {
   flex: 1;
-  padding: 10px;
-  background: #555;
-  color: white;
-  border: none;
-  border-radius: 4px;
+  padding: 10px 16px;
+  background: hsl(var(--secondary));
+  color: hsl(var(--secondary-foreground));
+  border: 1px solid hsl(var(--border));
+  border-radius: calc(var(--radius) - 2px);
   font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.15s ease;
 }
 
 .rb-nav-button:hover:not(:disabled) {
-  background: #333;
+  background: hsl(var(--accent));
+  border-color: hsl(var(--foreground) / 0.2);
 }
 
 .rb-nav-button:disabled {
-  background: #ccc;
+  background: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
   cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .rb-status {
-  padding: 12px;
-  border-radius: 4px;
+  padding: 12px 16px;
+  border-radius: calc(var(--radius) - 2px);
   font-size: 13px;
-  margin-bottom: 15px;
+  margin-bottom: 16px;
   line-height: 1.5;
+  border: 1px solid;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .rb-status.info {
-  background: #e3f2fd;
-  color: #1976d2;
-  border-left: 4px solid #1976d2;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  border-color: hsl(var(--border));
 }
 
 .rb-status.success {
-  background: #e8f5e9;
-  color: #388e3c;
-  border-left: 4px solid #388e3c;
+  background: hsl(142 76% 96%);
+  color: hsl(142 76% 36%);
+  border-color: hsl(142 76% 45%);
 }
 
 .rb-status.error {
-  background: #ffebee;
-  color: #d32f2f;
-  border-left: 4px solid #d32f2f;
+  background: hsl(var(--destructive) / 0.1);
+  color: hsl(var(--destructive));
+  border-color: hsl(var(--destructive) / 0.5);
 }
 
 .rb-status.warning {
-  background: #fff3e0;
-  color: #f57c00;
-  border-left: 4px solid #f57c00;
-}
-
-.rb-progress {
-  margin-top: 10px;
+  background: hsl(38 92% 95%);
+  color: hsl(38 92% 50%);
+  border-color: hsl(38 92% 50% / 0.5);
 }
 
 .rb-progress-bar {
   width: 100%;
   height: 8px;
-  background: #e0e0e0;
-  border-radius: 4px;
+  background: hsl(var(--secondary));
+  border-radius: 9999px;
   overflow: hidden;
+  margin-top: 8px;
 }
 
 .rb-progress-fill {
   height: 100%;
-  background: #e41b13;
+  background: hsl(var(--primary));
   transition: width 0.3s ease;
-  border-radius: 4px;
-}
-
-.rb-progress-text {
-  font-size: 12px;
-  color: #666;
-  margin-top: 6px;
-  text-align: center;
+  border-radius: 9999px;
 }
 
 .rb-current-image-info {
-  background: #f5f5f5;
-  padding: 15px;
-  border-radius: 4px;
-  margin-bottom: 15px;
+  background: hsl(var(--muted) / 0.3);
+  padding: 12px;
+  border-radius: calc(var(--radius) - 2px);
+  margin-bottom: 12px;
 }
 
 .rb-current-image-title {
   font-size: 12px;
-  color: #888;
-  margin-bottom: 5px;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+  margin-bottom: 4px;
 }
 
 .rb-current-image-name {
   font-size: 14px;
   font-weight: 600;
-  color: #333;
-  word-break: break-all;
+  color: hsl(var(--foreground));
+  word-break: break-word;
 }
 
 .rb-hidden {
-  display: none !important;
+  display: none;
+}
+
+/* Utility text classes */
+.rb-info-text {
+  margin-top: 10px;
+  font-size: 12px;
+  color: hsl(var(--muted-foreground));
+  line-height: 1.5;
+}
+
+.rb-hint-text {
+  margin-top: 10px;
+  font-size: 11px;
+  color: hsl(var(--muted-foreground) / 0.7);
+  font-style: italic;
+}
+
+.rb-instructions-list {
+  font-size: 12px;
+  color: hsl(var(--foreground) / 0.8);
+  padding-left: 20px;
+  margin: 10px 0 0 0;
+  line-height: 1.8;
+}
+
+.rb-instructions-list li {
+  margin-bottom: 6px;
+}
+
+.rb-instructions-list li:last-child {
+  margin-bottom: 0;
 }
 
 /* Scrollbar styling */
-#rb-auto-uploader-sidebar::-webkit-scrollbar,
-.rb-image-list::-webkit-scrollbar {
+.rb-sidebar-content::-webkit-scrollbar,
+.rb-queue-list::-webkit-scrollbar {
   width: 8px;
 }
 
-#rb-auto-uploader-sidebar::-webkit-scrollbar-track,
-.rb-image-list::-webkit-scrollbar-track {
-  background: #f1f1f1;
+.rb-sidebar-content::-webkit-scrollbar-track,
+.rb-queue-list::-webkit-scrollbar-track {
+  background: hsl(var(--muted) / 0.2);
 }
 
-#rb-auto-uploader-sidebar::-webkit-scrollbar-thumb,
-.rb-image-list::-webkit-scrollbar-thumb {
-  background: #888;
+.rb-sidebar-content::-webkit-scrollbar-thumb,
+.rb-queue-list::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
   border-radius: 4px;
 }
 
-#rb-auto-uploader-sidebar::-webkit-scrollbar-thumb:hover,
-.rb-image-list::-webkit-scrollbar-thumb:hover {
-  background: #555;
+.rb-sidebar-content::-webkit-scrollbar-thumb:hover,
+.rb-queue-list::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rb-status {
+  animation: fadeIn 0.2s ease;
+}
+
+.rb-queue-item {
+  animation: fadeIn 0.15s ease;
 }
