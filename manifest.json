@@ -5,9 +5,16 @@
   "description": "Automate the process of uploading designs to Redbubble with a convenient sidebar interface",
   "permissions": ["activeTab", "storage"],
   "host_permissions": ["https://www.redbubble.com/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
-      "matches": ["https://www.redbubble.com/portfolio/images/new*"],
+      "matches": [
+        "https://www.redbubble.com/*",
+        "https://www.redbubble.com/portfolio*",
+        "https://www.redbubble.com/portfolio/images/new*"
+      ],
       "js": ["content.js"],
       "css": ["sidebar.css"],
       "run_at": "document_idle"

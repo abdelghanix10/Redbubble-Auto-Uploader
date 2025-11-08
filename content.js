@@ -17,8 +17,8 @@ class RedbubbleAutoUploader {
     this.injectSidebar();
     this.attachEventListeners();
 
-    // Try to restore upload session if one exists
-    await this.restoreSession();
+    // Try to restore upload session from background script
+    await this.restoreFromBackground();
 
     this.updateUI();
   }
@@ -168,25 +168,38 @@ class RedbubbleAutoUploader {
     );
   }
 
-  handleImageSelection(files) {
+  async handleImageSelection(files) {
     if (!files || files.length === 0) return;
 
-    this.images = Array.from(files).map((file, index) => ({
-      file: file,
-      name: file.name,
-      title: "",
-      tags: "",
-      description: "",
-      status: "pending",
-      index: index,
-    }));
+    this.showStatus("info", "Processing images...");
 
+    // Convert files to base64 for storage in background
+    const imagePromises = Array.from(files).map(async (file, index) => {
+      const base64 = await this.fileToBase64(file);
+      return {
+        file: file, // Keep original File object for immediate use
+        base64: base64, // Store base64 for background script
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        title: "",
+        tags: "",
+        description: "",
+        status: "pending",
+        index: index,
+      };
+    });
+
+    this.images = await Promise.all(imagePromises);
     this.currentIndex = 0;
 
     // Try to match with CSV data if already loaded
     if (this.csvData) {
       this.matchCSVData();
     }
+
+    // Save to background script
+    await this.saveToBackground();
 
     this.updateUI();
     this.showStatus("success", `${this.images.length} image(s) selected`);
@@ -318,6 +331,9 @@ class RedbubbleAutoUploader {
     }
 
     this.updateImageList();
+
+    // Save to background script
+    this.saveToBackground();
   }
 
   updateCurrentImageFields() {
@@ -578,37 +594,69 @@ class RedbubbleAutoUploader {
       console.log("Step 7: Submitting work...");
       await this.submitWork();
 
-      // Step 8: Mark as completed before navigation
+      // Step 8: Wait for submission to complete
+      console.log("Step 8: Waiting for submission to complete...");
+      await this.sleep(2000);
+
+      // Step 9: Mark as completed and save to background
       image.status = "completed";
-      await this.saveSession();
+      await this.saveToBackground();
+      this.updateUI();
 
-      console.log("Step 8: Work submitted successfully!");
+      console.log("Step 9: Work submitted successfully!");
       this.showStatus("success", `✅ "${image.name}" submitted successfully!`);
-
-      // Step 9: Wait for submission to process
-      await this.sleep(3000);
 
       // Step 10: Check if there are more images to upload
       const remainingImages = this.images.filter(
         (img) => img.status === "pending"
       );
+
       if (remainingImages.length > 0) {
         console.log(
-          `Step 10: Navigating to next image (${remainingImages.length} remaining)...`
+          `Step 10: ${remainingImages.length} images remaining. Navigating back to upload page...`
         );
+
         this.showStatus(
           "info",
-          `Preparing next upload (${remainingImages.length} remaining)...`
+          `✅ Uploaded! Navigating to next image (${remainingImages.length} remaining)...`
         );
 
-        // Navigate back to upload page for next image
-        window.location.href = "https://www.redbubble.com/portfolio/images/new";
+        // Save state before page reload
+        await this.saveToBackground();
 
-        // This will cause page reload and create a new instance
-        // The upload will NOT continue automatically after reload
+        // Wait a bit for any redirects
+        await this.sleep(2000);
+
+        // Check if we're still on the upload page or got redirected
+        const currentUrl = window.location.href;
+        console.log("Current URL after submit:", currentUrl);
+
+        // Navigate back to upload page (will reload and restore from background)
+        if (!currentUrl.includes("/portfolio/images/new")) {
+          console.log("Redirected away. Navigating back to upload page...");
+
+          // Try clicking "Add another design" link
+          const addLink = document.querySelector(
+            'a[href="/portfolio/images/new"]'
+          );
+          if (addLink) {
+            console.log("Clicking 'Add another design' link...");
+            addLink.click();
+          } else {
+            console.log("Direct navigation to upload page...");
+            window.location.href =
+              "https://www.redbubble.com/portfolio/images/new";
+          }
+        } else {
+          console.log("Still on upload page, reloading...");
+          window.location.reload();
+        }
+
+        // Page will reload, and init() will restore data from background
         return;
       } else {
         console.log("All images uploaded!");
+        await chrome.runtime.sendMessage({ action: "clearQueue" });
       }
     } catch (error) {
       console.error("Upload failed:", error);
@@ -639,15 +687,6 @@ class RedbubbleAutoUploader {
     // Trigger multiple events to ensure it's detected
     fileInput.dispatchEvent(new Event("change", { bubbles: true }));
     fileInput.dispatchEvent(new Event("input", { bubbles: true }));
-
-    // Some frameworks need this
-    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-      window.HTMLInputElement.prototype,
-      "value"
-    ).set;
-
-    // Try clicking the input as well
-    fileInput.click();
 
     console.log("Upload events triggered, waiting for processing...");
     await this.sleep(2000);
@@ -838,6 +877,43 @@ class RedbubbleAutoUploader {
     submitButton.click();
   }
 
+  async clickAddAnotherDesign() {
+    console.log("Looking for 'Add another design' link...");
+
+    // Wait a bit for the success page to fully load
+    await this.sleep(2000);
+
+    // Try to find the "Add another design" link
+    const addAnotherLink = document.querySelector(
+      'a[href="/portfolio/images/new"]'
+    );
+
+    if (!addAnotherLink) {
+      console.warn(
+        "'Add another design' link not found, trying alternative selectors..."
+      );
+
+      // Try finding by text content
+      const links = Array.from(document.querySelectorAll("a"));
+      const linkByText = links.find(
+        (link) =>
+          link.textContent.includes("Add another design") ||
+          link.textContent.includes("Add another")
+      );
+
+      if (linkByText) {
+        console.log("Found 'Add another design' link by text content");
+        linkByText.click();
+        return;
+      }
+
+      throw new Error("Could not find 'Add another design' link");
+    }
+
+    console.log("Clicking 'Add another design' link...");
+    addAnotherLink.click();
+  }
+
   async saveSession() {
     // Save upload session to Chrome storage
     // Note: We can't save File objects, only metadata
@@ -949,6 +1025,119 @@ class RedbubbleAutoUploader {
     }
 
     console.log("=== END DEBUG INFO ===");
+  }
+
+  // Background script communication methods
+  async saveToBackground() {
+    try {
+      // Prepare data for background (without File objects)
+      const dataToSave = {
+        images: this.images.map((img) => ({
+          base64: img.base64,
+          name: img.name,
+          type: img.type,
+          size: img.size,
+          title: img.title,
+          tags: img.tags,
+          description: img.description,
+          status: img.status,
+          index: img.index,
+        })),
+        currentIndex: this.currentIndex,
+        isUploading: this.isUploading,
+        csvData: this.csvData,
+      };
+
+      const response = await chrome.runtime.sendMessage({
+        action: "saveQueue",
+        data: dataToSave,
+      });
+
+      console.log("Data saved to background:", response);
+    } catch (error) {
+      console.error("Failed to save to background:", error);
+    }
+  }
+
+  async restoreFromBackground() {
+    try {
+      const response = await chrome.runtime.sendMessage({
+        action: "getQueue",
+      });
+
+      if (
+        response.success &&
+        response.data &&
+        response.data.images.length > 0
+      ) {
+        console.log("Restoring data from background:", response.data);
+
+        // Reconstruct File objects from base64
+        const imagePromises = response.data.images.map(async (imgData) => {
+          const file = await this.base64ToFile(
+            imgData.base64,
+            imgData.name,
+            imgData.type
+          );
+          return {
+            file: file,
+            base64: imgData.base64,
+            name: imgData.name,
+            type: imgData.type,
+            size: imgData.size,
+            title: imgData.title,
+            tags: imgData.tags,
+            description: imgData.description,
+            status: imgData.status,
+            index: imgData.index,
+          };
+        });
+
+        this.images = await Promise.all(imagePromises);
+        this.currentIndex = response.data.currentIndex;
+        this.isUploading = response.data.isUploading;
+        this.csvData = response.data.csvData;
+
+        console.log(`Restored ${this.images.length} images from background`);
+
+        // Update CSV status if present
+        if (this.csvData) {
+          document.getElementById(
+            "rb-csv-status"
+          ).textContent = `✓ ${this.csvData.length} entries loaded (restored)`;
+        }
+
+        // Show status message
+        const pending = this.images.filter(
+          (img) => img.status === "pending"
+        ).length;
+        if (pending > 0) {
+          this.showStatus(
+            "info",
+            `Session restored! ${pending} image(s) pending upload. Click "Start Upload" to continue.`
+          );
+        }
+      } else {
+        console.log("No queue data to restore");
+      }
+    } catch (error) {
+      console.error("Failed to restore from background:", error);
+    }
+  }
+
+  async fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async base64ToFile(base64, fileName, fileType) {
+    const response = await fetch(base64);
+    const blob = await response.blob();
+    return new File([blob], fileName, { type: fileType });
   }
 
   sleep(ms) {
