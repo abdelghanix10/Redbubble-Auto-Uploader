@@ -71,6 +71,16 @@ class SidePanelController {
     });
   }
 
+  /**
+   * Normalize filename for matching (remove extension, lowercase)
+   * @param {string} filename - The filename to normalize
+   * @returns {string} Normalized filename
+   */
+  normalizeFilename(filename) {
+    // Remove file extension and convert to lowercase
+    return filename.replace(/\.[^/.]+$/, "").toLowerCase();
+  }
+
   handleMessage(message, sender, sendResponse) {
     console.log("Side panel received message:", message.action);
 
@@ -218,11 +228,11 @@ class SidePanelController {
 
     // Try to get data from CSV
     if (this.csvData) {
-      const csvEntry = this.csvData.find(
-        (entry) =>
-          entry.image_name === currentImage.name ||
-          entry.image_name === currentImage.name.replace(/\.[^/.]+$/, "")
-      );
+      const normalizedImageName = this.normalizeFilename(currentImage.name);
+      const csvEntry = this.csvData.find((entry) => {
+        const normalizedCsvName = this.normalizeFilename(entry.image_name);
+        return normalizedCsvName === normalizedImageName;
+      });
 
       console.log("CSV entry found:", csvEntry);
 
@@ -248,11 +258,11 @@ class SidePanelController {
 
     // Try to get data from CSV first
     if (this.csvData) {
-      const csvEntry = this.csvData.find(
-        (entry) =>
-          entry.image_name === currentImage.name ||
-          entry.image_name === currentImage.name.replace(/\.[^/.]+$/, "")
-      );
+      const normalizedImageName = this.normalizeFilename(currentImage.name);
+      const csvEntry = this.csvData.find((entry) => {
+        const normalizedCsvName = this.normalizeFilename(entry.image_name);
+        return normalizedCsvName === normalizedImageName;
+      });
 
       if (csvEntry) {
         formData = {
