@@ -39,16 +39,8 @@ async function startUploadProcess() {
       args: [imageData],
     });
 
-    // Wait for upload
-    let progress = 0;
-    while (progress < 1) {
-      await new Promise((resolve) => setTimeout(resolve, 5000));
-      const result = await chrome.scripting.executeScript({
-        target: { tabId },
-        func: getProgress,
-      });
-      progress = result[0].result;
-    }
+    // Delay 5 seconds
+    await new Promise((resolve) => setTimeout(resolve, 5000));
 
     // Fill details
     await chrome.scripting.executeScript({
@@ -62,6 +54,17 @@ async function startUploadProcess() {
       target: { tabId },
       func: setOptions,
     });
+
+    // Wait for upload to complete (data-value == 0)
+    let progress = 1; // assume not 0
+    while (progress != 0) {
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      const result = await chrome.scripting.executeScript({
+        target: { tabId },
+        func: getProgress,
+      });
+      progress = result[0].result;
+    }
 
     // Submit
     await chrome.scripting.executeScript({
