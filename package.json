@@ -5,7 +5,7 @@
   "main": "background.js",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && copy manifest.json dist\\ && copy background.js dist\\ && copy sidepanel.html dist\\",
     "preview": "vite preview"
   },
   "dependencies": {

@@ -10,6 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
+  DialogDescription,
 } from "./components/ui/Dialog";
 import {
   DropdownMenu,
@@ -17,9 +18,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./components/ui/DropdownMenu";
+import { storeImage, getImage, deleteImage } from "./idb.js";
 
 function App() {
   const [queue, setQueue] = useState([]);
+  const [images, setImages] = useState({});
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
   const [selected, setSelected] = useState([]);
@@ -29,6 +32,18 @@ function App() {
     chrome.runtime.onMessage.addListener((message) => {
       if (message.action === "updateQueue") {
         setQueue(message.queue);
+        // Reload images in case of changes
+        const imagePromises = message.queue.map(async (design) => {
+          const dataURL = await getImage(design.imageId);
+          return { id: design.id, dataURL };
+        });
+        Promise.all(imagePromises).then((loadedImages) => {
+          const imagesObj = {};
+          loadedImages.forEach(({ id, dataURL }) => {
+            imagesObj[id] = dataURL;
+          });
+          setImages(imagesObj);
+        });
       }
     });
   }, []);
@@ -36,6 +51,16 @@ function App() {
   const loadQueue = async () => {
     const { queue } = await chrome.storage.local.get("queue");
     setQueue(queue || []);
+    const imagePromises = (queue || []).map(async (design) => {
+      const dataURL = await getImage(design.imageId);
+      return { id: design.id, dataURL };
+    });
+    const loadedImages = await Promise.all(imagePromises);
+    const imagesObj = {};
+    loadedImages.forEach(({ id, dataURL }) => {
+      imagesObj[id] = dataURL;
+    });
+    setImages(imagesObj);
   };
 
   const saveQueue = async (newQueue) => {
@@ -51,6 +76,8 @@ function App() {
         reader.onload = () => resolve(reader.result);
         reader.readAsDataURL(img);
       });
+      const imageId = Date.now() + Math.random();
+      await storeImage(imageId, dataURL);
       const name = img.name;
       const nameWithoutExt = name.replace(/\.[^/.]+$/, "").toLowerCase();
       const csv = csvData.find(
@@ -58,9 +85,8 @@ function App() {
           c.image_name.replace(/\.[^/.]+$/, "").toLowerCase() === nameWithoutExt
       );
       newDesigns.push({
-        id: Date.now() + Math.random(),
-        image: dataURL,
-        imageData: dataURL,
+        id: imageId,
+        imageId,
         title: csv?.title || name,
         tags: csv?.tags || "",
         description: csv?.description || "",
@@ -77,6 +103,9 @@ function App() {
 
   const deleteSelected = () => {
     const newQueue = queue.filter((d) => !selected.includes(d.id));
+    selected.forEach(async (id) => {
+      await deleteImage(id);
+    });
     saveQueue(newQueue);
     setSelected([]);
   };
@@ -124,6 +153,9 @@ function App() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Add Designs</DialogTitle>
+              <DialogDescription>
+                Upload images and optionally a CSV file with metadata.
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <input type="file" multiple accept="image/*" id="images" />
@@ -177,7 +209,7 @@ function App() {
                 }
               }}
             />
-            <img src={d.image} alt="" className="w-10 h-10 object-cover" />
+            <img src={images[d.id]} alt="" className="w-10 h-10 object-cover" />
             <div className="flex-1">
               <div className="font-medium">{d.title}</div>
               <div className="flex gap-1">

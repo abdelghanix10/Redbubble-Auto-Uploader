@@ -31,10 +31,12 @@ async function startUploadProcess() {
     await waitForPageLoad(tabId);
 
     // Upload image
+    const fullDataURL = await getImage(design.imageId);
+    const imageData = fullDataURL.split(",")[1];
     await chrome.scripting.executeScript({
       target: { tabId },
       func: uploadImage,
-      args: [design.imageData],
+      args: [imageData],
     });
 
     // Wait for upload
@@ -94,15 +96,18 @@ function uploadImage(imageData) {
   const input = document.querySelector('input[id="select-image-single"]');
   if (!input) return;
 
-  fetch(imageData)
-    .then((res) => res.blob())
-    .then((blob) => {
-      const file = new File([blob], "design.png", { type: "image/png" });
-      const dt = new DataTransfer();
-      dt.items.add(file);
-      input.files = dt.files;
-      input.dispatchEvent(new Event("change", { bubbles: true }));
-    });
+  const byteCharacters = atob(imageData);
+  const byteNumbers = new Array(byteCharacters.length);
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteNumbers[i] = byteCharacters.charCodeAt(i);
+  }
+  const byteArray = new Uint8Array(byteNumbers);
+  const blob = new Blob([byteArray], { type: "image/png" });
+  const file = new File([blob], "design.png", { type: "image/png" });
+  const dt = new DataTransfer();
+  dt.items.add(file);
+  input.files = dt.files;
+  input.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
 function getProgress() {
@@ -152,4 +157,33 @@ async function waitForPageLoad(tabId) {
       // ignore
     }
   }
+}
+
+// IndexedDB utilities
+const DB_NAME = "RedbubbleUploaderDB";
+const STORE_NAME = "images";
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME);
+      }
+    };
+  });
+}
+
+async function getImage(id) {
+  const db = await openDB();
+  const transaction = db.transaction([STORE_NAME], "readonly");
+  const store = transaction.objectStore(STORE_NAME);
+  const request = store.get(id);
+  return new Promise((resolve, reject) => {
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
 }
