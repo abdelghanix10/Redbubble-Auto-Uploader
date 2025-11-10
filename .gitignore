@@ -47,3 +47,6 @@ yarn.lock
 # User data
 user-data/
 uploads/
+
+# Copilot files
+.github
