@@ -12,6 +12,7 @@ import {
   DialogFooter,
   DialogDescription,
 } from "./components/ui/Dialog";
+import { Filter as FunnelIcon, Upload, Search } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -120,14 +121,21 @@ function App() {
   return (
     <div className="p-4">
       <div className="flex gap-2 mb-4">
-        <Input
-          placeholder="Search designs..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Search designs..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-10"
+          />
+        </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline">Filter: {filter}</Button>
+            <Button variant="outline" className="flex items-center gap-2">
+              <FunnelIcon />
+              Filter: {filter}
+            </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuItem onClick={() => setFilter("All")}>
@@ -149,7 +157,10 @@ function App() {
         </DropdownMenu>
         <Dialog>
           <DialogTrigger asChild>
-            <Button>Upload Designs</Button>
+            <Button className="flex items-center gap-2">
+              <Upload />
+              Upload Designs
+            </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
@@ -183,18 +194,20 @@ function App() {
           </DialogContent>
         </Dialog>
       </div>
-      <Button onClick={startUpload} className="w-full mb-4">
-        Start Upload
-      </Button>
-      <Button
-        onClick={deleteSelected}
-        variant="destructive"
-        className="w-full mb-4"
-        disabled={selected.length === 0}
-      >
-        Delete Selected
-      </Button>
-      <div className="rounded-md border">
+      <div className="flex gap-2 mb-4">
+        <Button onClick={startUpload} className="w-full mb-4">
+          Start Upload
+        </Button>
+        <Button
+          onClick={deleteSelected}
+          variant="destructive"
+          className="w-full mb-4"
+          disabled={selected.length === 0}
+        >
+          Delete Selected
+        </Button>
+      </div>
+      <div className="rounded-md border overflow-x-auto">
         <table className="w-full caption-bottom text-sm">
           <thead className="[&_tr]:border-b">
             <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
@@ -213,85 +226,96 @@ function App() {
                   }}
                 />
               </th>
-              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">
+              <th className="h-12 px-4 text-left align-middle font-medium [&:has([role=checkbox])]:pr-0">
                 Design
               </th>
-              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">
+              <th className="h-12 px-4 text-left align-middle font-medium [&:has([role=checkbox])]:pr-0">
                 Title
               </th>
-              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">
+              <th className="h-12 px-4 text-left align-middle font-medium [&:has([role=checkbox])]:pr-0">
                 Tags
               </th>
-              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">
+              <th className="h-12 px-4 text-left align-middle font-medium [&:has([role=checkbox])]:pr-0">
                 Description
               </th>
-              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">
+              <th className="h-12 px-4 text-left align-middle font-medium [&:has([role=checkbox])]:pr-0">
                 Status
               </th>
-              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">
+              <th className="h-12 px-4 text-left align-middle font-medium [&:has([role=checkbox])]:pr-0">
                 Uploaded
               </th>
             </tr>
           </thead>
           <tbody className="[&_tr:last-child]:border-0">
-            {filteredQueue.map((d) => (
-              <tr
-                key={d.id}
-                className={cn(
-                  "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
-                  {
-                    "bg-red-100": !d.tags || !d.description,
-                  }
-                )}
-              >
-                <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
-                  <Checkbox
-                    checked={selected.includes(d.id)}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setSelected([...selected, d.id]);
-                      } else {
-                        setSelected(selected.filter((id) => id !== d.id));
-                      }
-                    }}
-                  />
-                </td>
-                <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
-                  <img
-                    src={images[d.id]}
-                    alt=""
-                    className="w-10 h-10 object-cover rounded-md"
-                  />
-                </td>
-                <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0 font-medium">
-                  {d.title}
-                </td>
-                <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0 text-muted-foreground">
-                  {d.tags}
-                </td>
-                <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0 text-muted-foreground">
-                  {d.description}
-                </td>
-                <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
-                  <Badge
-                    variant={
-                      d.status === "Success"
-                        ? "default"
-                        : d.status === "Error"
-                        ? "destructive"
-                        : "secondary"
+            {filteredQueue.length > 0 ? (
+              filteredQueue.map((d) => (
+                <tr
+                  key={d.id}
+                  className={cn(
+                    "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
+                    {
+                      "bg-red-100": !d.tags || !d.description,
                     }
-                  >
-                    {d.status}
-                  </Badge>
-                </td>
-                <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
-                  <Badge variant={d.uploaded ? "default" : "destructive"}>
-                    {d.uploaded ? "Yes" : "No"}
-                  </Badge>
+                  )}
+                >
+                  <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                    <Checkbox
+                      checked={selected.includes(d.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelected([...selected, d.id]);
+                        } else {
+                          setSelected(selected.filter((id) => id !== d.id));
+                        }
+                      }}
+                    />
+                  </td>
+                  <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                    <img
+                      src={images[d.id]}
+                      alt=""
+                      className="w-10 h-10 object-cover rounded-md"
+                    />
+                  </td>
+                  <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0 font-medium">
+                    {d.title}
+                  </td>
+                  <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0 text-muted-foreground">
+                    {d.tags}
+                  </td>
+                  <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0 text-muted-foreground">
+                    {d.description}
+                  </td>
+                  <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                    <Badge
+                      variant={
+                        d.status === "Success"
+                          ? "default"
+                          : d.status === "Error"
+                          ? "destructive"
+                          : "secondary"
+                      }
+                    >
+                      {d.status}
+                    </Badge>
+                  </td>
+                  <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                    <Badge variant={d.uploaded ? "default" : "destructive"}>
+                      {d.uploaded ? "Yes" : "No"}
+                    </Badge>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td
+                  colSpan="7"
+                  className="p-4 text-center text-muted-foreground"
+                >
+                  Not Designs found.
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
