@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "./components/ui/DropdownMenu";
 import { storeImage, getImage, deleteImage } from "./idb.js";
+import { cn } from "./lib/utils.js";
 
 function App() {
   const [queue, setQueue] = useState([]);
@@ -193,44 +194,106 @@ function App() {
       >
         Delete Selected
       </Button>
-      <div className="space-y-2">
-        {filteredQueue.map((d) => (
-          <div
-            key={d.id}
-            className="flex items-center gap-2 p-2 border rounded"
-          >
-            <Checkbox
-              checked={selected.includes(d.id)}
-              onCheckedChange={(checked) => {
-                if (checked) {
-                  setSelected([...selected, d.id]);
-                } else {
-                  setSelected(selected.filter((id) => id !== d.id));
-                }
-              }}
-            />
-            <img src={images[d.id]} alt="" className="w-10 h-10 object-cover" />
-            <div className="flex-1">
-              <div className="font-medium">{d.title}</div>
-              <div className="flex gap-1">
-                <Badge
-                  variant={
-                    d.status === "Success"
-                      ? "default"
-                      : d.status === "Error"
-                      ? "destructive"
-                      : "secondary"
+      <div className="rounded-md border">
+        <table className="w-full caption-bottom text-sm">
+          <thead className="[&_tr]:border-b">
+            <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 w-12">
+                <Checkbox
+                  checked={
+                    filteredQueue.length > 0 &&
+                    selected.length === filteredQueue.length
                   }
-                >
-                  {d.status}
-                </Badge>
-                <Badge variant="outline">
-                  {d.uploaded ? "Uploaded" : "Not Uploaded"}
-                </Badge>
-              </div>
-            </div>
-          </div>
-        ))}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      setSelected(filteredQueue.map((d) => d.id));
+                    } else {
+                      setSelected([]);
+                    }
+                  }}
+                />
+              </th>
+              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">
+                Design
+              </th>
+              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">
+                Title
+              </th>
+              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">
+                Tags
+              </th>
+              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">
+                Description
+              </th>
+              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">
+                Status
+              </th>
+              <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">
+                Uploaded
+              </th>
+            </tr>
+          </thead>
+          <tbody className="[&_tr:last-child]:border-0">
+            {filteredQueue.map((d) => (
+              <tr
+                key={d.id}
+                className={cn(
+                  "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
+                  {
+                    "bg-red-100": !d.tags || !d.description,
+                  }
+                )}
+              >
+                <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                  <Checkbox
+                    checked={selected.includes(d.id)}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setSelected([...selected, d.id]);
+                      } else {
+                        setSelected(selected.filter((id) => id !== d.id));
+                      }
+                    }}
+                  />
+                </td>
+                <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                  <img
+                    src={images[d.id]}
+                    alt=""
+                    className="w-10 h-10 object-cover rounded-md"
+                  />
+                </td>
+                <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0 font-medium">
+                  {d.title}
+                </td>
+                <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0 text-muted-foreground">
+                  {d.tags}
+                </td>
+                <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0 text-muted-foreground">
+                  {d.description}
+                </td>
+                <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                  <Badge
+                    variant={
+                      d.status === "Success"
+                        ? "default"
+                        : d.status === "Error"
+                        ? "destructive"
+                        : "secondary"
+                    }
+                  >
+                    {d.status}
+                  </Badge>
+                </td>
+                <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                  <Badge variant={d.uploaded ? "default" : "destructive"}>
+                    {d.uploaded ? "Yes" : "No"}
+                  </Badge>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
