@@ -47,6 +47,7 @@ function App() {
   const [delayAfterImage, setDelayAfterImage] = useState(30); // seconds
   const [delayAfterBatch, setDelayAfterBatch] = useState(15); // minutes
   const [countdown, setCountdown] = useState(null); // countdown timer in seconds
+  const [uploadError, setUploadError] = useState(""); // error message for upload validation
 
   useEffect(() => {
     loadQueue();
@@ -152,10 +153,26 @@ function App() {
   };
 
   const startUpload = () => {
+    // Validate that all queued designs have titles
+    const queuedDesigns = queue.filter((d) => d.status === "Queued");
+    const designsWithoutTitles = queuedDesigns.filter(
+      (d) => !d.title || d.title.trim() === ""
+    );
+
+    if (designsWithoutTitles.length > 0) {
+      setUploadError(
+        `Cannot start upload: ${designsWithoutTitles.length} design(s) missing title(s). Please add titles to all queued designs before uploading.`
+      );
+      return;
+    }
+
+    // Clear any previous error
+    setUploadError("");
+
     setIsUploading(true);
     setUploadProgress({
       current: 0,
-      total: queue.filter((d) => d.status === "Queued").length,
+      total: queuedDesigns.length,
     });
     chrome.runtime.sendMessage({
       action: "startUpload",
@@ -407,6 +424,47 @@ function App() {
           Delete Selected
         </Button>
       </div>
+      {uploadError && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg
+                className="h-5 w-5 text-red-400"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-red-800">{uploadError}</p>
+            </div>
+            <div className="ml-auto pl-3">
+              <button
+                onClick={() => setUploadError("")}
+                className="inline-flex rounded-md p-1.5 text-red-400 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500"
+              >
+                <span className="sr-only">Dismiss</span>
+                <svg
+                  className="h-5 w-5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="mb-4 p-4 bg-gray-50 rounded-md">
         <div
           className={`grid gap-4 text-sm ${
