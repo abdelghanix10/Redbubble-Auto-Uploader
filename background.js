@@ -4,6 +4,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "startUpload") {
     stopUpload = false; // Reset stop flag
     startUploadProcess(
+      message.selectedIds,
       message.delayAfterImage || 30000,
       message.delayAfterBatch || 900000
     );
@@ -17,24 +18,29 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 async function startUploadProcess(
+  selectedIds,
   delayAfterImage = 30000,
   delayAfterBatch = 900000
 ) {
   const { queue } = await chrome.storage.local.get("queue");
   if (!queue || queue.length === 0) return;
 
+  // Filter queue to only include selected designs
+  const designsToUpload = queue.filter((d) => selectedIds.includes(d.id));
+  if (designsToUpload.length === 0) return;
+
   const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
   const tabId = tabs[0].id;
 
   // Calculate total items to process
-  const totalToProcess = queue.filter((d) => d.status === "Queued").length;
+  const totalToProcess = designsToUpload.length;
   let currentProcessed = 0;
 
-  for (let i = 0; i < queue.length; i++) {
+  for (let i = 0; i < designsToUpload.length; i++) {
     if (stopUpload) break; // Check if upload should stop
 
-    const design = queue[i];
-    if (design.status !== "Queued") continue;
+    const design = designsToUpload[i];
+    // No need to check status since we already filtered for selected designs
 
     currentProcessed++;
 
@@ -117,9 +123,8 @@ async function startUploadProcess(
     await chrome.storage.local.set({ queue });
     chrome.runtime.sendMessage({ action: "updateQueue", queue });
 
-    // Apply delays only if there are more queued items
-    const remainingQueued = queue.filter((d) => d.status === "Queued").length;
-    if (remainingQueued > 0) {
+    // Apply delays only if there are more items in the current batch to process
+    if (currentProcessed < totalToProcess) {
       // Delay after each image
       await delayWithCountdown(delayAfterImage);
 

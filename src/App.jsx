@@ -57,12 +57,11 @@ function App() {
       }
       if (message.action === "updateQueue") {
         setQueue(message.queue);
-        // Check if upload is complete (no items with "Uploading" status AND no queued items)
+        // Check if upload is complete (no items with "Uploading" status)
         const hasUploading = message.queue.some(
           (d) => d.status === "Uploading"
         );
-        const hasQueued = message.queue.some((d) => d.status === "Queued");
-        if (!hasUploading && !hasQueued) {
+        if (!hasUploading) {
           setIsUploading(false);
         }
         // Reload images in case of changes
@@ -153,15 +152,33 @@ function App() {
   };
 
   const startUpload = () => {
-    // Validate that all queued designs have titles
-    const queuedDesigns = queue.filter((d) => d.status === "Queued");
-    const designsWithoutTitles = queuedDesigns.filter(
+    // Get selected designs that are queued
+    const selectedQueuedDesigns = queue.filter(
+      (d) => selected.includes(d.id) && d.status === "Queued"
+    );
+
+    // Check if any designs are selected
+    if (selectedQueuedDesigns.length === 0) {
+      setUploadError("Please select at least one design to upload.");
+      return;
+    }
+
+    // Check maximum limit of 30 designs
+    if (selectedQueuedDesigns.length > 30) {
+      setUploadError(
+        `Cannot upload more than 30 designs at once. You selected ${selectedQueuedDesigns.length} designs. Please select 30 or fewer.`
+      );
+      return;
+    }
+
+    // Validate that all selected designs have titles
+    const designsWithoutTitles = selectedQueuedDesigns.filter(
       (d) => !d.title || d.title.trim() === ""
     );
 
     if (designsWithoutTitles.length > 0) {
       setUploadError(
-        `Cannot start upload: ${designsWithoutTitles.length} design(s) missing title(s). Please add titles to all queued designs before uploading.`
+        `Cannot start upload: ${designsWithoutTitles.length} selected design(s) missing title(s). Please add titles to all selected designs before uploading.`
       );
       return;
     }
@@ -172,10 +189,11 @@ function App() {
     setIsUploading(true);
     setUploadProgress({
       current: 0,
-      total: queuedDesigns.length,
+      total: selectedQueuedDesigns.length,
     });
     chrome.runtime.sendMessage({
       action: "startUpload",
+      selectedIds: selectedQueuedDesigns.map((d) => d.id),
       delayAfterImage: delayAfterImage * 1000, // convert to milliseconds
       delayAfterBatch: delayAfterBatch * 60 * 1000, // convert to milliseconds
     });
@@ -398,10 +416,7 @@ function App() {
           className={`w-full mb-4 ${
             isUploading ? "bg-red-600 hover:bg-red-700" : ""
           }`}
-          disabled={
-            queue.filter((d) => d.status === "Queued").length === 0 &&
-            !isUploading
-          }
+          disabled={selected.length === 0 && !isUploading}
         >
           {isUploading ? (
             <>
@@ -411,7 +426,7 @@ function App() {
           ) : (
             <>
               <Upload className="w-4 h-4 mr-2" />
-              Start Upload
+              Upload Selected ({selected.length})
             </>
           )}
         </Button>
