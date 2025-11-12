@@ -35,6 +35,7 @@ function App() {
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
     loadQueue();
@@ -166,6 +167,21 @@ function App() {
 
   return (
     <div className="p-4">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-6 pb-4 border-b">
+        <div className="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-lg">
+          <Upload className="w-6 h-6 text-white" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Redbubble Auto Uploader
+          </h1>
+          <p className="text-sm text-gray-600">
+            Automate uploading designs to Redbubble
+          </p>
+        </div>
+      </div>
+
       <div className="flex gap-2 mb-4 flex-col sm:flex-row">
         <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -201,7 +217,7 @@ function App() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        <Dialog>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button className="flex items-center gap-2">
               <Upload />
@@ -256,6 +272,10 @@ function App() {
                     csvData = parseCSV(csvText);
                   }
                   addDesigns(images, csvData);
+                  // Clear the file inputs
+                  document.getElementById("images").value = "";
+                  document.getElementById("csv").value = "";
+                  setIsDialogOpen(false);
                 }}
               >
                 Add
