@@ -12,7 +12,13 @@ import {
   DialogFooter,
   DialogDescription,
 } from "./components/ui/Dialog";
-import { Filter as FunnelIcon, Upload, Search, Square, ChevronDown } from "lucide-react";
+import {
+  Filter as FunnelIcon,
+  Upload,
+  Search,
+  Square,
+  ChevronDown,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -514,34 +520,35 @@ function App() {
                     {editingCell?.id === d.id &&
                     editingCell?.field === "tags" ? (
                       <div className="flex gap-2">
-                        <Input
+                        <textarea
                           value={editValues[`${d.id}-tags`] ?? d.tags}
                           onChange={(e) =>
                             handleEditChange(d.id, "tags", e.target.value)
                           }
-                          className="h-8"
+                          className="flex h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
                           placeholder="Enter tags..."
                           onKeyDown={(e) => {
-                            if (e.key === "Enter") saveEdit(d.id, "tags");
                             if (e.key === "Escape") cancelEdit();
                           }}
                           autoFocus
                         />
-                        <Button
-                          size="sm"
-                          onClick={() => saveEdit(d.id, "tags")}
-                          className="h-8 px-2"
-                        >
-                          ✓
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={cancelEdit}
-                          className="h-8 px-2"
-                        >
-                          ✕
-                        </Button>
+                        <div className="flex flex-col gap-1">
+                          <Button
+                            size="sm"
+                            onClick={() => saveEdit(d.id, "tags")}
+                            className="h-8 px-2"
+                          >
+                            ✓
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={cancelEdit}
+                            className="h-8 px-2"
+                          >
+                            ✕
+                          </Button>
+                        </div>
                       </div>
                     ) : (
                       <div
@@ -562,7 +569,7 @@ function App() {
                     {editingCell?.id === d.id &&
                     editingCell?.field === "description" ? (
                       <div className="flex gap-2">
-                        <Input
+                        <textarea
                           value={
                             editValues[`${d.id}-description`] ?? d.description
                           }
@@ -573,30 +580,30 @@ function App() {
                               e.target.value
                             )
                           }
-                          className="h-8"
+                          className="flex h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
                           placeholder="Enter description..."
                           onKeyDown={(e) => {
-                            if (e.key === "Enter")
-                              saveEdit(d.id, "description");
                             if (e.key === "Escape") cancelEdit();
                           }}
                           autoFocus
                         />
-                        <Button
-                          size="sm"
-                          onClick={() => saveEdit(d.id, "description")}
-                          className="h-8 px-2"
-                        >
-                          ✓
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={cancelEdit}
-                          className="h-8 px-2"
-                        >
-                          ✕
-                        </Button>
+                        <div className="flex flex-col gap-1">
+                          <Button
+                            size="sm"
+                            onClick={() => saveEdit(d.id, "description")}
+                            className="h-8 px-2"
+                          >
+                            ✓
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={cancelEdit}
+                            className="h-8 px-2"
+                          >
+                            ✕
+                          </Button>
+                        </div>
                       </div>
                     ) : (
                       <div
@@ -661,7 +668,11 @@ function App() {
               <span className="text-sm text-muted-foreground">Show:</span>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-8 flex gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 flex gap-1"
+                  >
                     <span>{itemsPerPage}</span>
                     <ChevronDown />
                   </Button>
