@@ -152,9 +152,11 @@ function App() {
   };
 
   const startUpload = () => {
-    // Get selected designs that are queued
+    // Get selected designs that are queued or have errors (for reupload)
     const selectedQueuedDesigns = queue.filter(
-      (d) => selected.includes(d.id) && d.status === "Queued"
+      (d) =>
+        selected.includes(d.id) &&
+        (d.status === "Queued" || d.status === "Error")
     );
 
     // Check if any designs are selected
