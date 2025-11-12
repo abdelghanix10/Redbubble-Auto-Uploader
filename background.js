@@ -119,15 +119,29 @@ async function startUploadProcess(
 
     // Apply delays
     // Delay after each image
-    await new Promise((resolve) => setTimeout(resolve, delayAfterImage));
+    await delayWithCountdown(delayAfterImage);
 
     // Additional delay after every 15 images
     if (currentProcessed % 15 === 0) {
-      await new Promise((resolve) => setTimeout(resolve, delayAfterBatch));
+      await delayWithCountdown(delayAfterBatch);
     }
 
     if (stopUpload) break; // Exit the loop if stopUpload is true
   }
+}
+
+async function delayWithCountdown(delayMs) {
+  // Send initial countdown value (convert to seconds)
+  chrome.runtime.sendMessage({
+    action: "countdownStart",
+    countdown: Math.ceil(delayMs / 1000),
+  });
+
+  // Wait for the delay
+  await new Promise((resolve) => setTimeout(resolve, delayMs));
+
+  // Send countdown end
+  chrome.runtime.sendMessage({ action: "countdownEnd" });
 }
 
 function uploadImage(imageData) {

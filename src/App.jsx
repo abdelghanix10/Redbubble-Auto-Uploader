@@ -46,6 +46,7 @@ function App() {
   const [editValues, setEditValues] = useState({}); // temporary edit values
   const [delayAfterImage, setDelayAfterImage] = useState(30); // seconds
   const [delayAfterBatch, setDelayAfterBatch] = useState(15); // minutes
+  const [countdown, setCountdown] = useState(null); // countdown timer in seconds
 
   useEffect(() => {
     loadQueue();
@@ -55,11 +56,12 @@ function App() {
       }
       if (message.action === "updateQueue") {
         setQueue(message.queue);
-        // Check if upload is complete (no items with "Uploading" status)
+        // Check if upload is complete (no items with "Uploading" status AND no queued items)
         const hasUploading = message.queue.some(
           (d) => d.status === "Uploading"
         );
-        if (!hasUploading) {
+        const hasQueued = message.queue.some((d) => d.status === "Queued");
+        if (!hasUploading && !hasQueued) {
           setIsUploading(false);
         }
         // Reload images in case of changes
@@ -75,8 +77,27 @@ function App() {
           setImages(imagesObj);
         });
       }
+      if (message.action === "countdownStart") {
+        setCountdown(message.countdown);
+      }
+      if (message.action === "countdownEnd") {
+        setCountdown(null);
+      }
     });
   }, []);
+
+  // Countdown timer effect
+  useEffect(() => {
+    let interval;
+    if (countdown > 0) {
+      interval = setInterval(() => {
+        setCountdown((prev) => prev - 1);
+      }, 1000);
+    } else if (countdown === 0) {
+      setCountdown(null);
+    }
+    return () => clearInterval(interval);
+  }, [countdown]);
 
   const loadQueue = async () => {
     const { queue } = await chrome.storage.local.get("queue");
@@ -389,7 +410,9 @@ function App() {
       <div className="mb-4 p-4 bg-gray-50 rounded-md">
         <div
           className={`grid gap-4 text-sm ${
-            isUploading
+            isUploading && countdown
+              ? "grid-cols-2 sm:grid-cols-5"
+              : isUploading
               ? "grid-cols-2 sm:grid-cols-4"
               : "grid-cols-1 sm:grid-cols-3"
           }`}
@@ -411,6 +434,15 @@ function App() {
               <div className="text-muted-foreground">
                 Processing ({uploadProgress.current}/{uploadProgress.total})
               </div>
+            </div>
+          )}
+          {countdown && (
+            <div className="text-center">
+              <div className="font-semibold text-lg text-orange-600">
+                {Math.floor(countdown / 60)}:
+                {(countdown % 60).toString().padStart(2, "0")}
+              </div>
+              <div className="text-muted-foreground">Next upload in</div>
             </div>
           )}
           <div className="text-center">

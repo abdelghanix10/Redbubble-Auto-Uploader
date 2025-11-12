@@ -16,7 +16,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true;
 });
 
-async function startUploadProcess(delayAfterImage = 30000, delayAfterBatch = 900000) {
+async function startUploadProcess(
+  delayAfterImage = 30000,
+  delayAfterBatch = 900000
+) {
   const { queue } = await chrome.storage.local.get("queue");
   if (!queue || queue.length === 0) return;
 
@@ -34,11 +37,11 @@ async function startUploadProcess(delayAfterImage = 30000, delayAfterBatch = 900
     if (design.status !== "Queued") continue;
 
     currentProcessed++;
-    
+
     // Send progress update before processing
-    chrome.runtime.sendMessage({ 
-      action: "uploadProgress", 
-      progress: { current: currentProcessed, total: totalToProcess } 
+    chrome.runtime.sendMessage({
+      action: "uploadProgress",
+      progress: { current: currentProcessed, total: totalToProcess },
     });
 
     // Update status to Uploading
@@ -116,15 +119,29 @@ async function startUploadProcess(delayAfterImage = 30000, delayAfterBatch = 900
 
     // Apply delays
     // Delay after each image
-    await new Promise((resolve) => setTimeout(resolve, delayAfterImage));
-    
+    await delayWithCountdown(delayAfterImage);
+
     // Additional delay after every 15 images
     if (currentProcessed % 15 === 0) {
-      await new Promise((resolve) => setTimeout(resolve, delayAfterBatch));
+      await delayWithCountdown(delayAfterBatch);
     }
 
     if (stopUpload) break; // Exit the loop if stopUpload is true
   }
+}
+
+async function delayWithCountdown(delayMs) {
+  // Send initial countdown value (convert to seconds)
+  chrome.runtime.sendMessage({
+    action: "countdownStart",
+    countdown: Math.ceil(delayMs / 1000),
+  });
+
+  // Wait for the delay
+  await new Promise((resolve) => setTimeout(resolve, delayMs));
+
+  // Send countdown end
+  chrome.runtime.sendMessage({ action: "countdownEnd" });
 }
 
 function uploadImage(imageData) {
