@@ -87,6 +87,7 @@ function App() {
 
   const addDesigns = async (images, csvData) => {
     const newDesigns = [];
+    const newImages = {};
     for (const img of images) {
       const reader = new FileReader();
       const dataURL = await new Promise((resolve) => {
@@ -95,6 +96,7 @@ function App() {
       });
       const imageId = Date.now() + Math.random();
       await storeImage(imageId, dataURL);
+      newImages[imageId] = dataURL;
       const name = img.name;
       const nameWithoutExt = name.replace(/\.[^/.]+$/, "").toLowerCase();
       const csv = csvData.find(
@@ -112,6 +114,7 @@ function App() {
       });
     }
     saveQueue([...queue, ...newDesigns]);
+    setImages({ ...images, ...newImages });
   };
 
   const startUpload = () => {
@@ -130,10 +133,13 @@ function App() {
 
   const deleteSelected = () => {
     const newQueue = queue.filter((d) => !selected.includes(d.id));
+    const newImages = { ...images };
     selected.forEach(async (id) => {
       await deleteImage(id);
+      delete newImages[id];
     });
     saveQueue(newQueue);
+    setImages(newImages);
     setSelected([]);
   };
 
