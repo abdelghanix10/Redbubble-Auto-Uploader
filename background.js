@@ -117,13 +117,16 @@ async function startUploadProcess(
     await chrome.storage.local.set({ queue });
     chrome.runtime.sendMessage({ action: "updateQueue", queue });
 
-    // Apply delays
-    // Delay after each image
-    await delayWithCountdown(delayAfterImage);
+    // Apply delays only if there are more queued items
+    const remainingQueued = queue.filter((d) => d.status === "Queued").length;
+    if (remainingQueued > 0) {
+      // Delay after each image
+      await delayWithCountdown(delayAfterImage);
 
-    // Additional delay after every 15 images
-    if (currentProcessed % 15 === 0) {
-      await delayWithCountdown(delayAfterBatch);
+      // Additional delay after every 15 images
+      if (currentProcessed % 15 === 0) {
+        await delayWithCountdown(delayAfterBatch);
+      }
     }
 
     if (stopUpload) break; // Exit the loop if stopUpload is true
@@ -137,8 +140,18 @@ async function delayWithCountdown(delayMs) {
     countdown: Math.ceil(delayMs / 1000),
   });
 
-  // Wait for the delay
-  await new Promise((resolve) => setTimeout(resolve, delayMs));
+  // Wait for the delay, but check for stop signal every second
+  const startTime = Date.now();
+  const endTime = startTime + delayMs;
+
+  while (Date.now() < endTime) {
+    if (stopUpload) {
+      // Send countdown end immediately if stopped
+      chrome.runtime.sendMessage({ action: "countdownEnd" });
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
 
   // Send countdown end
   chrome.runtime.sendMessage({ action: "countdownEnd" });
