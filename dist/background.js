@@ -1,6 +1,13 @@
+let stopUpload = false;
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "startUpload") {
+    stopUpload = false; // Reset stop flag
     startUploadProcess();
+    sendResponse({ success: true });
+  }
+  if (message.action === "stopUpload") {
+    stopUpload = true;
     sendResponse({ success: true });
   }
   return true;
@@ -13,9 +20,23 @@ async function startUploadProcess() {
   const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
   const tabId = tabs[0].id;
 
+  // Calculate total items to process
+  const totalToProcess = queue.filter((d) => d.status === "Queued").length;
+  let currentProcessed = 0;
+
   for (let i = 0; i < queue.length; i++) {
+    if (stopUpload) break; // Check if upload should stop
+
     const design = queue[i];
     if (design.status !== "Queued") continue;
+
+    currentProcessed++;
+
+    // Send progress update before processing
+    chrome.runtime.sendMessage({
+      action: "uploadProgress",
+      progress: { current: currentProcessed, total: totalToProcess },
+    });
 
     // Update status to Uploading
     design.status = "Uploading";
@@ -92,6 +113,8 @@ async function startUploadProcess() {
 
     await chrome.storage.local.set({ queue });
     chrome.runtime.sendMessage({ action: "updateQueue", queue });
+
+    if (stopUpload) break; // Exit the loop if stopUpload is true
   }
 }
 

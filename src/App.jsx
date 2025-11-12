@@ -12,7 +12,7 @@ import {
   DialogFooter,
   DialogDescription,
 } from "./components/ui/Dialog";
-import { Filter as FunnelIcon, Upload, Search } from "lucide-react";
+import { Filter as FunnelIcon, Upload, Search, Square } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,12 +28,27 @@ function App() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
   const [selected, setSelected] = useState([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({
+    current: 0,
+    total: 0,
+  });
 
   useEffect(() => {
     loadQueue();
     chrome.runtime.onMessage.addListener((message) => {
+      if (message.action === "uploadProgress") {
+        setUploadProgress(message.progress);
+      }
       if (message.action === "updateQueue") {
         setQueue(message.queue);
+        // Check if upload is complete (no items with "Uploading" status)
+        const hasUploading = message.queue.some(
+          (d) => d.status === "Uploading"
+        );
+        if (!hasUploading) {
+          setIsUploading(false);
+        }
         // Reload images in case of changes
         const imagePromises = message.queue.map(async (design) => {
           const dataURL = await getImage(design.imageId);
@@ -89,7 +104,7 @@ function App() {
       newDesigns.push({
         id: imageId,
         imageId,
-        title: csv?.title || name,
+        title: csv?.title || name.replace(/\.[^/.]+$/, ""),
         tags: csv?.tags || "",
         description: csv?.description || "",
         status: "Queued",
@@ -100,7 +115,17 @@ function App() {
   };
 
   const startUpload = () => {
+    setIsUploading(true);
+    setUploadProgress({
+      current: 0,
+      total: queue.filter((d) => d.status === "Queued").length,
+    });
     chrome.runtime.sendMessage({ action: "startUpload" });
+  };
+
+  const stopUpload = () => {
+    setIsUploading(false);
+    chrome.runtime.sendMessage({ action: "stopUpload" });
   };
 
   const deleteSelected = () => {
@@ -120,8 +145,8 @@ function App() {
 
   return (
     <div className="p-4">
-      <div className="flex gap-2 mb-4">
-        <div className="relative">
+      <div className="flex gap-2 mb-4 flex-col sm:flex-row">
+        <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
             placeholder="Search designs..."
@@ -170,8 +195,32 @@ function App() {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
-              <input type="file" multiple accept="image/*" id="images" />
-              <input type="file" accept=".csv" id="csv" />
+              <div>
+                <label
+                  htmlFor="images"
+                  className="block text-sm font-medium mb-1"
+                >
+                  Images:
+                </label>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  id="images"
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                />
+              </div>
+              <div>
+                <label htmlFor="csv" className="block text-sm font-medium mb-1">
+                  CSV File (optional):
+                </label>
+                <input
+                  type="file"
+                  accept=".csv"
+                  id="csv"
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                />
+              </div>
             </div>
             <DialogFooter>
               <Button
@@ -195,8 +244,27 @@ function App() {
         </Dialog>
       </div>
       <div className="flex gap-2 mb-4">
-        <Button onClick={startUpload} className="w-full mb-4">
-          Start Upload
+        <Button
+          onClick={isUploading ? stopUpload : startUpload}
+          className={`w-full mb-4 ${
+            isUploading ? "bg-red-600 hover:bg-red-700" : ""
+          }`}
+          disabled={
+            queue.filter((d) => d.status === "Queued").length === 0 &&
+            !isUploading
+          }
+        >
+          {isUploading ? (
+            <>
+              <Square className="w-4 h-4 mr-2" />
+              Stop Upload
+            </>
+          ) : (
+            <>
+              <Upload className="w-4 h-4 mr-2" />
+              Start Upload
+            </>
+          )}
         </Button>
         <Button
           onClick={deleteSelected}
@@ -206,6 +274,54 @@ function App() {
         >
           Delete Selected
         </Button>
+      </div>
+      <div className="mb-4 p-4 bg-gray-50 rounded-md">
+        <div
+          className={`grid gap-4 text-sm ${
+            isUploading
+              ? "grid-cols-2 sm:grid-cols-4"
+              : "grid-cols-1 sm:grid-cols-3"
+          }`}
+        >
+          <div className="text-center">
+            <div className="font-semibold text-lg">{filteredQueue.length}</div>
+            <div className="text-muted-foreground">Total Images</div>
+          </div>
+          {isUploading && (
+            <div className="text-center">
+              <div className="font-semibold text-lg text-blue-600">
+                {uploadProgress.total > 0
+                  ? Math.round(
+                      (uploadProgress.current / uploadProgress.total) * 100
+                    )
+                  : 0}
+                %
+              </div>
+              <div className="text-muted-foreground">
+                Processing ({uploadProgress.current}/{uploadProgress.total})
+              </div>
+            </div>
+          )}
+          <div className="text-center">
+            <div className="font-semibold text-lg text-orange-600">
+              {
+                filteredQueue.filter((d) => !d.tags || d.tags.trim() === "")
+                  .length
+              }
+            </div>
+            <div className="text-muted-foreground">No Tags</div>
+          </div>
+          <div className="text-center">
+            <div className="font-semibold text-lg text-red-600">
+              {
+                filteredQueue.filter(
+                  (d) => !d.description || d.description.trim() === ""
+                ).length
+              }
+            </div>
+            <div className="text-muted-foreground">No Description</div>
+          </div>
+        </div>
       </div>
       <div className="rounded-md border overflow-x-auto">
         <table className="w-full caption-bottom text-sm">
@@ -280,11 +396,21 @@ function App() {
                   <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0 font-medium">
                     {d.title}
                   </td>
-                  <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0 text-muted-foreground">
-                    {d.tags}
+                  <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                    <div className="text-muted-foreground line-clamp-2 max-w-xs">
+                      {d.tags && d.tags.trim() !== "" ? (
+                        d.tags
+                      ) : (
+                        <span className="text-gray-400 italic">—</span>
+                      )}
+                    </div>
                   </td>
-                  <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0 text-muted-foreground">
-                    {d.description}
+                  <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
+                    <div className="text-muted-foreground line-clamp-2 max-w-xs">
+                      {d.description && d.description.trim() !== ""
+                        ? d.description
+                        : "—"}
+                    </div>
                   </td>
                   <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
                     <Badge
