@@ -12,7 +12,7 @@ import {
   DialogFooter,
   DialogDescription,
 } from "./components/ui/Dialog";
-import { Filter as FunnelIcon, Upload, Search, Square } from "lucide-react";
+import { Filter as FunnelIcon, Upload, Search, Square, ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -641,7 +641,7 @@ function App() {
                   colSpan="7"
                   className="p-4 text-center text-muted-foreground"
                 >
-                  Not Designs found.
+                  No Designs found.
                 </td>
               </tr>
             )}
@@ -659,16 +659,28 @@ function App() {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Show:</span>
-              <select
-                value={itemsPerPage}
-                onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                className="px-2 py-1 border rounded text-sm"
-              >
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-                <option value={75}>75</option>
-                <option value={100}>100</option>
-              </select>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 flex gap-1">
+                    <span>{itemsPerPage}</span>
+                    <ChevronDown />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => setItemsPerPage(25)}>
+                    25
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setItemsPerPage(50)}>
+                    50
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setItemsPerPage(75)}>
+                    75
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setItemsPerPage(100)}>
+                    100
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
           <div className="flex gap-2">
