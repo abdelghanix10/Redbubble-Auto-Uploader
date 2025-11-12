@@ -33,6 +33,8 @@ function App() {
     current: 0,
     total: 0,
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
 
   useEffect(() => {
     loadQueue();
@@ -148,6 +150,19 @@ function App() {
       d.title.toLowerCase().includes(search.toLowerCase()) &&
       (filter === "All" || d.status === filter)
   );
+
+  // Pagination
+  const totalPages = Math.ceil(filteredQueue.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedQueue = filteredQueue.slice(
+    startIndex,
+    startIndex + itemsPerPage
+  );
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filter, itemsPerPage]);
 
   return (
     <div className="p-4">
@@ -336,14 +351,23 @@ function App() {
               <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 w-12">
                 <Checkbox
                   checked={
-                    filteredQueue.length > 0 &&
-                    selected.length === filteredQueue.length
+                    paginatedQueue.length > 0 &&
+                    paginatedQueue.every((d) => selected.includes(d.id))
                   }
                   onCheckedChange={(checked) => {
                     if (checked) {
-                      setSelected(filteredQueue.map((d) => d.id));
+                      const newSelected = [...selected];
+                      paginatedQueue.forEach((d) => {
+                        if (!newSelected.includes(d.id)) {
+                          newSelected.push(d.id);
+                        }
+                      });
+                      setSelected(newSelected);
                     } else {
-                      setSelected([]);
+                      const paginatedIds = paginatedQueue.map((d) => d.id);
+                      setSelected(
+                        selected.filter((id) => !paginatedIds.includes(id))
+                      );
                     }
                   }}
                 />
@@ -370,7 +394,7 @@ function App() {
           </thead>
           <tbody className="[&_tr:last-child]:border-0">
             {filteredQueue.length > 0 ? (
-              filteredQueue.map((d) => (
+              paginatedQueue.map((d) => (
                 <tr
                   key={d.id}
                   className={cn(
@@ -451,6 +475,51 @@ function App() {
           </tbody>
         </table>
       </div>
+      {filteredQueue.length > 0 && (
+        <div className="flex justify-between items-center mt-4">
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-muted-foreground">
+              Page{" "}
+              <span className="font-semibold">
+                {currentPage} of {totalPages}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Show:</span>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                className="px-2 py-1 border rounded text-sm"
+              >
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={75}>75</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              variant="outline"
+              className="px-4"
+            >
+              Previous
+            </Button>
+            <Button
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              }
+              disabled={currentPage === totalPages}
+              variant="outline"
+              className="px-4"
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
