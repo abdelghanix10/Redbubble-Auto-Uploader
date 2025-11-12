@@ -36,6 +36,8 @@ function App() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingCell, setEditingCell] = useState(null); // {id, field}
+  const [editValues, setEditValues] = useState({}); // temporary edit values
 
   useEffect(() => {
     loadQueue();
@@ -144,6 +146,30 @@ function App() {
     saveQueue(newQueue);
     setImages(newImages);
     setSelected([]);
+  };
+
+  const startEditing = (id, field, currentValue) => {
+    setEditingCell({ id, field });
+    setEditValues({ ...editValues, [`${id}-${field}`]: currentValue });
+  };
+
+  const saveEdit = (id, field) => {
+    const newValue = editValues[`${id}-${field}`];
+    const updatedQueue = queue.map((item) =>
+      item.id === id ? { ...item, [field]: newValue } : item
+    );
+    saveQueue(updatedQueue);
+    setEditingCell(null);
+    setEditValues({ ...editValues, [`${id}-${field}`]: undefined });
+  };
+
+  const cancelEdit = () => {
+    setEditingCell(null);
+    setEditValues({});
+  };
+
+  const handleEditChange = (id, field, value) => {
+    setEditValues({ ...editValues, [`${id}-${field}`]: value });
   };
 
   const filteredQueue = queue.filter(
@@ -443,24 +469,151 @@ function App() {
                       className="w-10 h-10 object-cover rounded-md"
                     />
                   </td>
-                  <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0 font-medium">
-                    {d.title}
+                  <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0 font-medium min-w-60">
+                    {editingCell?.id === d.id &&
+                    editingCell?.field === "title" ? (
+                      <div className="flex gap-2">
+                        <Input
+                          value={editValues[`${d.id}-title`] ?? d.title}
+                          onChange={(e) =>
+                            handleEditChange(d.id, "title", e.target.value)
+                          }
+                          className="h-8"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") saveEdit(d.id, "title");
+                            if (e.key === "Escape") cancelEdit();
+                          }}
+                          autoFocus
+                        />
+                        <Button
+                          size="sm"
+                          onClick={() => saveEdit(d.id, "title")}
+                          className="h-8 px-2"
+                        >
+                          ✓
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={cancelEdit}
+                          className="h-8 px-2"
+                        >
+                          ✕
+                        </Button>
+                      </div>
+                    ) : (
+                      <div
+                        className="cursor-pointer hover:bg-gray-100 p-1 rounded"
+                        onClick={() => startEditing(d.id, "title", d.title)}
+                      >
+                        {d.title}
+                      </div>
+                    )}
                   </td>
-                  <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
-                    <div className="text-muted-foreground line-clamp-2 max-w-xs">
-                      {d.tags && d.tags.trim() !== "" ? (
-                        d.tags
-                      ) : (
-                        <span className="text-gray-400 italic">—</span>
-                      )}
-                    </div>
+                  <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0 min-w-60">
+                    {editingCell?.id === d.id &&
+                    editingCell?.field === "tags" ? (
+                      <div className="flex gap-2">
+                        <Input
+                          value={editValues[`${d.id}-tags`] ?? d.tags}
+                          onChange={(e) =>
+                            handleEditChange(d.id, "tags", e.target.value)
+                          }
+                          className="h-8"
+                          placeholder="Enter tags..."
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") saveEdit(d.id, "tags");
+                            if (e.key === "Escape") cancelEdit();
+                          }}
+                          autoFocus
+                        />
+                        <Button
+                          size="sm"
+                          onClick={() => saveEdit(d.id, "tags")}
+                          className="h-8 px-2"
+                        >
+                          ✓
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={cancelEdit}
+                          className="h-8 px-2"
+                        >
+                          ✕
+                        </Button>
+                      </div>
+                    ) : (
+                      <div
+                        className="cursor-pointer hover:bg-gray-100 p-1 rounded"
+                        onClick={() => startEditing(d.id, "tags", d.tags)}
+                      >
+                        <div className="text-muted-foreground line-clamp-2 max-w-xs">
+                          {d.tags && d.tags.trim() !== "" ? (
+                            d.tags
+                          ) : (
+                            <span className="text-gray-400 italic">—</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </td>
-                  <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
-                    <div className="text-muted-foreground line-clamp-2 max-w-xs">
-                      {d.description && d.description.trim() !== ""
-                        ? d.description
-                        : "—"}
-                    </div>
+                  <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0 min-w-60">
+                    {editingCell?.id === d.id &&
+                    editingCell?.field === "description" ? (
+                      <div className="flex gap-2">
+                        <Input
+                          value={
+                            editValues[`${d.id}-description`] ?? d.description
+                          }
+                          onChange={(e) =>
+                            handleEditChange(
+                              d.id,
+                              "description",
+                              e.target.value
+                            )
+                          }
+                          className="h-8"
+                          placeholder="Enter description..."
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter")
+                              saveEdit(d.id, "description");
+                            if (e.key === "Escape") cancelEdit();
+                          }}
+                          autoFocus
+                        />
+                        <Button
+                          size="sm"
+                          onClick={() => saveEdit(d.id, "description")}
+                          className="h-8 px-2"
+                        >
+                          ✓
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={cancelEdit}
+                          className="h-8 px-2"
+                        >
+                          ✕
+                        </Button>
+                      </div>
+                    ) : (
+                      <div
+                        className="cursor-pointer hover:bg-gray-100 p-1 rounded"
+                        onClick={() =>
+                          startEditing(d.id, "description", d.description)
+                        }
+                      >
+                        <div className="text-muted-foreground line-clamp-2 max-w-xs">
+                          {d.description && d.description.trim() !== "" ? (
+                            d.description
+                          ) : (
+                            <span className="text-gray-400 italic">—</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </td>
                   <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
                     <Badge
