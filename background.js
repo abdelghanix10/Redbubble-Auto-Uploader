@@ -3,7 +3,10 @@ let stopUpload = false;
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "startUpload") {
     stopUpload = false; // Reset stop flag
-    startUploadProcess();
+    startUploadProcess(
+      message.delayAfterImage || 30000,
+      message.delayAfterBatch || 900000
+    );
     sendResponse({ success: true });
   }
   if (message.action === "stopUpload") {
@@ -13,7 +16,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true;
 });
 
-async function startUploadProcess() {
+async function startUploadProcess(
+  delayAfterImage = 30000,
+  delayAfterBatch = 900000
+) {
   const { queue } = await chrome.storage.local.get("queue");
   if (!queue || queue.length === 0) return;
 
@@ -59,9 +65,6 @@ async function startUploadProcess() {
       func: uploadImage,
       args: [imageData],
     });
-
-    // Delay 5 seconds
-    await new Promise((resolve) => setTimeout(resolve, 5000));
 
     // Fill details
     await chrome.scripting.executeScript({
@@ -113,6 +116,15 @@ async function startUploadProcess() {
 
     await chrome.storage.local.set({ queue });
     chrome.runtime.sendMessage({ action: "updateQueue", queue });
+
+    // Apply delays
+    // Delay after each image
+    await new Promise((resolve) => setTimeout(resolve, delayAfterImage));
+
+    // Additional delay after every 15 images
+    if (currentProcessed % 15 === 0) {
+      await new Promise((resolve) => setTimeout(resolve, delayAfterBatch));
+    }
 
     if (stopUpload) break; // Exit the loop if stopUpload is true
   }

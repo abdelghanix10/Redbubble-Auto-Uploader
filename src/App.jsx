@@ -44,6 +44,8 @@ function App() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCell, setEditingCell] = useState(null); // {id, field}
   const [editValues, setEditValues] = useState({}); // temporary edit values
+  const [delayAfterImage, setDelayAfterImage] = useState(30); // seconds
+  const [delayAfterBatch, setDelayAfterBatch] = useState(15); // minutes
 
   useEffect(() => {
     loadQueue();
@@ -134,7 +136,11 @@ function App() {
       current: 0,
       total: queue.filter((d) => d.status === "Queued").length,
     });
-    chrome.runtime.sendMessage({ action: "startUpload" });
+    chrome.runtime.sendMessage({
+      action: "startUpload",
+      delayAfterImage: delayAfterImage * 1000, // convert to milliseconds
+      delayAfterBatch: delayAfterBatch * 60 * 1000, // convert to milliseconds
+    });
   };
 
   const stopUpload = () => {
@@ -315,6 +321,38 @@ function App() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+      </div>
+      {/* Delay Settings */}
+      <div className="mb-4 p-4 bg-blue-50 rounded-md border border-blue-200">
+        <h3 className="text-sm font-medium text-blue-900 mb-3">
+          Upload Delay Settings
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-blue-800 mb-1">
+              Delay after each image (seconds)
+            </label>
+            <Input
+              type="number"
+              value={delayAfterImage}
+              onChange={(e) => setDelayAfterImage(Number(e.target.value))}
+              min="0"
+              className="w-full"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-blue-800 mb-1">
+              Delay after every 15 images (minutes)
+            </label>
+            <Input
+              type="number"
+              value={delayAfterBatch}
+              onChange={(e) => setDelayAfterBatch(Number(e.target.value))}
+              min="0"
+              className="w-full"
+            />
+          </div>
+        </div>
       </div>
       <div className="flex gap-2 mb-4">
         <Button
